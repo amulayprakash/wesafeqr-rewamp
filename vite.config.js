@@ -38,8 +38,8 @@ export default defineConfig({
     },
     // Warn on chunks > 600 kB (default 500 kB)
     chunkSizeWarningLimit: 600,
-    // Minify with esbuild (default, fast)
-    minify: 'esbuild',
+    // Minify with oxc (Vite 8 default, esbuild no longer bundled)
+    minify: 'oxc',
     // Generate source maps for Sentry/debugging (remove if not needed)
     sourcemap: false,
     // Ensure CSS is code-split per chunk
