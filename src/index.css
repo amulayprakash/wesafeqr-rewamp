@@ -1,77 +1,83 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+@keyframes shimmer {
+  100% { transform: translateX(200%); }
+}
+
 @layer base {
   :root {
-    /* WeSafe Brand Colors - Light Theme */
-    --background: 220 27% 98%;        /* #f6f6f8 */
-    --foreground: 222 84% 5%;         /* #0F172A */
+    /* WeSafe Brand Colors — tuned to logo periwinkle + coral heart */
+    --background: 230 22% 97%;        /* cool off-white */
+    --foreground: 237 40% 12%;        /* deep navy-slate */
 
-    --card: 0 0% 100%;                /* #FFFFFF */
-    --card-foreground: 222 84% 5%;
+    --card: 0 0% 100%;
+    --card-foreground: 237 40% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 84% 5%;
+    --popover-foreground: 237 40% 12%;
 
-    --primary: 239 84% 67%;           /* #6366F1 - WeSafe indigo */
+    /* Logo periwinkle blue — desaturated from original #6366F1 */
+    --primary: 237 46% 62%;           /* ~#6C72CC */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 96%;         /* #F1F5F9 */
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 230 18% 94%;
+    --secondary-foreground: 237 40% 20%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 215 16% 47%;  /* #64748B */
+    --muted: 230 16% 94%;
+    --muted-foreground: 230 12% 52%;
 
-    --accent: 220 14% 96%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 237 30% 92%;
+    --accent-foreground: 237 46% 40%;
 
-    --destructive: 350 89% 60%;       /* #F43F5E - WeSafe rose/red */
+    /* Logo coral heart */
+    --destructive: 350 82% 60%;       /* ~#F03758 */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;            /* #E2E8F0 */
-    --input: 214 32% 91%;
-    --ring: 239 84% 67%;              /* Same as primary */
+    --border: 230 15% 88%;
+    --input: 230 15% 88%;
+    --ring: 237 46% 62%;
 
-    --radius: 0.75rem;
+    --radius: 0.875rem;
 
     /* Status colors */
-    --success: 160 84% 39%;           /* #10B981 */
-    --warning: 38 92% 50%;            /* #F59E0B */
-    --info: 187 92% 41%;              /* #06B6D4 */
+    --success: 160 76% 38%;
+    --warning: 38 88% 50%;
+    --info: 197 84% 44%;
   }
 
   .dark {
-    --background: 222 84% 5%;         /* #0F172A */
-    --foreground: 210 40% 98%;        /* #F8FAFC */
+    --background: 237 28% 8%;         /* deep navy-black */
+    --foreground: 230 18% 95%;
 
-    --card: 217 33% 17%;              /* #1E293B */
-    --card-foreground: 210 40% 98%;
+    --card: 237 26% 13%;
+    --card-foreground: 230 18% 95%;
 
-    --popover: 217 33% 17%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 237 26% 13%;
+    --popover-foreground: 230 18% 95%;
 
-    --primary: 239 84% 67%;           /* #6366F1 */
+    --primary: 237 52% 68%;           /* slightly lighter for dark mode */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 237 22% 18%;
+    --secondary-foreground: 230 18% 90%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 237 22% 16%;
+    --muted-foreground: 230 14% 58%;
 
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 237 22% 18%;
+    --accent-foreground: 230 18% 90%;
 
-    --destructive: 350 89% 60%;
+    --destructive: 350 82% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 217 33% 25%;
-    --input: 217 33% 25%;
-    --ring: 239 84% 67%;
+    --border: 237 22% 22%;
+    --input: 237 22% 22%;
+    --ring: 237 52% 68%;
   }
 }
 
@@ -80,29 +86,95 @@
     @apply border-border;
   }
 
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', 'Noto Sans Devanagari', 'Noto Sans Tamil',
+    font-family: 'Roboto', 'Noto Sans Devanagari', 'Noto Sans Tamil',
                  'Noto Sans Telugu', 'Noto Sans Bengali', system-ui, sans-serif;
+    font-size: 18px;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-tap-highlight-color: transparent;
     min-height: 100dvh;
     margin: 0;
+    font-feature-settings: 'kern' 1, 'liga' 1;
   }
 
   #root {
     min-height: 100dvh;
+  }
+
+  h1, h2, h3, h4 {
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    font-weight: 700;
+  }
+
+  h1 { font-size: 2rem;      line-height: 1.2; }
+  h2 { font-size: 1.5rem;   line-height: 1.3; }
+  h3 { font-size: 1.25rem;  line-height: 1.4; }
+  h4 { font-size: 1.0625rem; line-height: 1.45; }
+
+  /* Improved focus ring */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: 6px;
   }
 }
 
 /* Material Symbols */
 .material-symbols-outlined {
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
 }
 
 .material-symbols-outlined.filled {
   font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Interactive press feedback — feels tactile on mobile */
+@layer utilities {
+  .press-scale {
+    transition: transform 150ms ease, opacity 150ms ease;
+  }
+  .press-scale:active {
+    transform: scale(0.97);
+    opacity: 0.92;
+  }
+}
+
+/* Button press feedback */
+button:not([disabled]):active,
+a:active {
+  transform: scale(0.98);
+  transition: transform 100ms ease;
+}
+
+/* Premium card shadow — tinted to brand */
+.card-shadow {
+  box-shadow:
+    0 1px 2px hsl(var(--foreground) / 0.04),
+    0 2px 8px hsl(var(--primary) / 0.06);
+}
+
+.card-shadow-md {
+  box-shadow:
+    0 2px 4px hsl(var(--foreground) / 0.05),
+    0 4px 16px hsl(var(--primary) / 0.08);
+}
+
+/* Glass morphism surface */
+.glass {
+  background: hsl(var(--card) / 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid hsl(var(--border) / 0.6);
 }
 
 /* Hide scrollbar for cleaner mobile experience */
@@ -124,9 +196,48 @@
   padding-top: env(safe-area-inset-top, 0);
 }
 
-/* Custom utility classes */
+/* Gradient text utility */
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Login page — animated orb pulse for logo */
+  @keyframes logo-pulse {
+    0%, 100% { box-shadow: 0 0 0 0px hsl(var(--primary) / 0); }
+    50%       { box-shadow: 0 0 0 10px hsl(var(--primary) / 0.12); }
+  }
+
+  /* Shimmer sweep utility */
+  .shimmer-sweep {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.12) 50%,
+      transparent 100%
+    );
+  }
+
+  /* Animated gradient border for premium cards */
+  .gradient-border {
+    position: relative;
+    background-clip: padding-box;
+  }
+
+  .gradient-border::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.3), transparent 40%, hsl(var(--destructive) / 0.15));
+    z-index: -1;
   }
 }

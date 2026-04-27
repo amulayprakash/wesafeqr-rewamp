@@ -51,7 +51,18 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["Inter", "Noto Sans Devanagari", "Noto Sans Tamil", "Noto Sans Telugu", "Noto Sans Bengali", "system-ui", "sans-serif"],
+        sans: ["Roboto", "Noto Sans Devanagari", "Noto Sans Tamil", "Noto Sans Telugu", "Noto Sans Bengali", "system-ui", "sans-serif"],
+        display: ["Roboto", "system-ui", "sans-serif"],
+      },
+      fontSize: {
+        xs:   ["0.875rem",  { lineHeight: "1.25rem" }],
+        sm:   ["1rem",      { lineHeight: "1.625rem" }],
+        base: ["1.125rem",  { lineHeight: "1.75rem" }],
+        lg:   ["1.25rem",   { lineHeight: "1.875rem" }],
+        xl:   ["1.4375rem", { lineHeight: "2rem" }],
+        "2xl":["1.6875rem", { lineHeight: "2.125rem" }],
+        "3xl":["2.0625rem", { lineHeight: "2.5rem" }],
+        "4xl":["2.5rem",    { lineHeight: "2.75rem" }],
       },
       keyframes: {
         "accordion-down": {
@@ -62,10 +73,25 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "fade-up": {
+          from: { opacity: "0", transform: "translateY(12px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "fade-in": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
+        },
+        "pulse-soft": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.65" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "fade-up": "fade-up 0.4s ease-out both",
+        "fade-in": "fade-in 0.3s ease-out both",
+        "pulse-soft": "pulse-soft 2.5s ease-in-out infinite",
       },
     },
   },

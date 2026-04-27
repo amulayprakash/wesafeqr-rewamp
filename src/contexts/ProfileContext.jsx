@@ -3,29 +3,46 @@ import {
   collection,
   doc,
   onSnapshot,
-  addDoc,
+  setDoc,
   updateDoc,
+  deleteDoc,
   serverTimestamp,
 } from 'firebase/firestore'
+
+function generateChildId() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  let id = 'child'
+  for (let i = 0; i < 10; i++) {
+    id += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return id
+}
 import { db } from '@/config/firebase'
 import { AuthContext } from './AuthContext'
 
 export const ProfileContext = createContext(null)
 
 export function ProfileProvider({ children }) {
-  const { user } = useContext(AuthContext)
+  const { user, loading: authLoading } = useContext(AuthContext)
   const [profiles, setProfiles] = useState([])
   const [activeProfileId, setActiveProfileId] = useState(null)
   const [loadingProfiles, setLoadingProfiles] = useState(true)
 
   // Listen to child profiles in real-time
   useEffect(() => {
+    // Don't do anything until Firebase Auth has fully resolved.
+    // This prevents a brief window where user is null / profiles is empty
+    // while auth is still initializing, which would incorrectly trigger onboarding.
+    if (authLoading) return
+
     if (!user) {
       setProfiles([])
       setActiveProfileId(null)
       setLoadingProfiles(false)
       return
     }
+
+    setLoadingProfiles(true) // reset while waiting for first snapshot
 
     const colRef = collection(db, 'Users', user.uid, 'ChildList')
     const unsubscribe = onSnapshot(colRef, (snapshot) => {
@@ -40,7 +57,7 @@ export function ProfileProvider({ children }) {
     })
 
     return () => unsubscribe()
-  }, [user])
+  }, [user, authLoading])
 
   const activeProfile = profiles.find((p) => p.id === activeProfileId) || null
 
@@ -51,12 +68,13 @@ export function ProfileProvider({ children }) {
   const addProfile = useCallback(
     async (data) => {
       if (!user) return
-      const colRef = collection(db, 'Users', user.uid, 'ChildList')
-      const docRef = await addDoc(colRef, {
+      const childId = generateChildId()
+      const docRef = doc(db, 'Users', user.uid, 'ChildList', childId)
+      await setDoc(docRef, {
         ...data,
         createdAt: serverTimestamp(),
       })
-      return docRef.id
+      return childId
     },
     [user]
   )
@@ -66,6 +84,16 @@ export function ProfileProvider({ children }) {
       if (!user) return
       const docRef = doc(db, 'Users', user.uid, 'ChildList', childId)
       await updateDoc(docRef, data)
+    },
+    [user]
+  )
+
+  const deleteProfile = useCallback(
+    async (childId) => {
+      if (!user) return
+      const docRef = doc(db, 'Users', user.uid, 'ChildList', childId)
+      await deleteDoc(docRef)
+      // If we deleted the active profile, the onSnapshot will auto-select the next one
     },
     [user]
   )
@@ -80,6 +108,7 @@ export function ProfileProvider({ children }) {
         switchProfile,
         addProfile,
         updateProfile,
+        deleteProfile,
       }}
     >
       {children}

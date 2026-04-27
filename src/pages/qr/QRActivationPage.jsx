@@ -1,6 +1,7 @@
 import { useState, useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/hooks/useAuth'
 import { ProfileContext } from '@/contexts/ProfileContext'
 import { activateQRCode } from '@/services/qrService'
@@ -11,12 +12,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import toast from 'react-hot-toast'
 
-// ─── QR type options ─────────────────────────────────────────────────────────
-const QR_TYPES = [
+// ─── QR type options (labels/descs resolved at render via t()) ───────────────
+const QR_TYPE_CONFIGS = [
   {
     id: 'wesafe',
-    label: 'Medical ID',
-    desc: 'Emergency medical information & contacts',
+    labelKey: 'qr.type_medical',
+    descKey: 'qr.type_medical_desc',
     icon: 'medical_services',
     iconBg: 'bg-indigo-100 dark:bg-indigo-900/30',
     iconColor: 'text-indigo-600 dark:text-indigo-400',
@@ -25,8 +26,8 @@ const QR_TYPES = [
   },
   {
     id: 'lostfound',
-    label: 'Lost & Found',
-    desc: 'Attach to belongings — wallet, bag, keys',
+    labelKey: 'qr.type_lostfound',
+    descKey: 'qr.type_lostfound_desc',
     icon: 'inventory_2',
     iconBg: 'bg-amber-100 dark:bg-amber-900/30',
     iconColor: 'text-amber-600 dark:text-amber-400',
@@ -35,8 +36,8 @@ const QR_TYPES = [
   },
   {
     id: 'vehicle',
-    label: 'Vehicle',
-    desc: 'Link to your car, bike or other vehicle',
+    labelKey: 'qr.type_vehicle',
+    descKey: 'qr.type_vehicle_desc',
     icon: 'directions_car',
     iconBg: 'bg-emerald-100 dark:bg-emerald-900/30',
     iconColor: 'text-emerald-600 dark:text-emerald-400',
@@ -77,6 +78,7 @@ export function QRActivationPage() {
   const { user } = useAuth()
   const { profiles, activeProfileId } = useContext(ProfileContext)
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   const [step, setStep] = useState(0)
   const [direction, setDirection] = useState(1)
@@ -97,7 +99,7 @@ export function QRActivationPage() {
   const handlePasscodeNext = () => {
     const code = passcode.trim().toUpperCase()
     if (!code || code.length < 4) {
-      toast.error('Please enter a valid QR passcode')
+      toast.error(t('qr.invalid_passcode'))
       return
     }
     setPasscode(code)
@@ -107,11 +109,11 @@ export function QRActivationPage() {
   // ── Step 1: Configure QR ──────────────────────────────────────────────────
   const handleConfigureNext = () => {
     if (!qrName.trim()) {
-      toast.error('Please give this QR code a name')
+      toast.error(t('qr.enter_name'))
       return
     }
     if (!selectedProfile) {
-      toast.error('Please select a profile to link')
+      toast.error(t('qr.select_profile_error'))
       return
     }
     goTo(2)
@@ -128,18 +130,18 @@ export function QRActivationPage() {
       })
       goTo(3)
     } catch (err) {
-      toast.error(err.message || 'Activation failed. Please try again.')
+      toast.error(err.message || t('qr.activation_failed'))
     } finally {
       setLoading(false)
     }
   }
 
-  const selectedType = QR_TYPES.find((t) => t.id === qrType)
-  const selectedProfileName = profiles.find((p) => p.id === selectedProfile)?.name || 'Profile'
+  const selectedTypeCfg = QR_TYPE_CONFIGS.find((cfg) => cfg.id === qrType)
+  const selectedProfileName = profiles.find((p) => p.id === selectedProfile)?.name || t('common.profile')
 
   return (
     <div className="min-h-screen bg-background">
-      <Header title="Activate QR Code" showBack />
+      <Header title={t('qr.activate_title')} showBack />
 
       <div className="px-4 py-6 max-w-md mx-auto lg:px-6 lg:py-8">
         {step < 3 && <StepIndicator current={step} total={3} />}
@@ -164,19 +166,19 @@ export function QRActivationPage() {
                     <span className="material-symbols-outlined filled text-white" style={{ fontSize: '36px' }}>qr_code_2</span>
                   </div>
                 </div>
-                <h2 className="text-2xl font-bold mb-2">Enter Your Passcode</h2>
+                <h2 className="text-2xl font-bold mb-2">{t('qr.enter_passcode_heading')}</h2>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  Find the unique passcode printed on the back of your WeSafe QR sticker.
+                  {t('qr.enter_passcode_desc')}
                 </p>
               </div>
 
               <Card className="mb-4">
                 <CardContent className="p-5 space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="passcode" className="text-sm font-medium">QR Passcode</Label>
+                    <Label htmlFor="passcode" className="text-sm font-medium">{t('qr.qr_passcode_label')}</Label>
                     <Input
                       id="passcode"
-                      placeholder="e.g. WS-A1B2C3"
+                      placeholder={t('qr.passcode_placeholder')}
                       value={passcode}
                       onChange={(e) => setPasscode(e.target.value.toUpperCase())}
                       onKeyDown={(e) => e.key === 'Enter' && handlePasscodeNext()}
@@ -185,7 +187,7 @@ export function QRActivationPage() {
                       autoFocus
                     />
                     <p className="text-xs text-muted-foreground text-center">
-                      Usually 6–10 characters, printed under the QR code
+                      {t('qr.passcode_hint')}
                     </p>
                   </div>
                 </CardContent>
@@ -198,16 +200,16 @@ export function QRActivationPage() {
                     <span className="material-symbols-outlined text-primary" style={{ fontSize: '16px' }}>info</span>
                   </div>
                   <div>
-                    <p className="text-sm font-semibold mb-1">Where is my passcode?</p>
+                    <p className="text-sm font-semibold mb-1">{t('qr.where_passcode')}</p>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      Flip your WeSafe QR sticker — the passcode is printed below the QR code in small text.
+                      {t('qr.where_passcode_desc')}
                     </p>
                   </div>
                 </div>
               </div>
 
               <Button onClick={handlePasscodeNext} className="w-full h-12 gap-2 shadow-md shadow-primary/20">
-                Continue
+                {t('qr.continue')}
                 <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_forward</span>
               </Button>
             </motion.div>
@@ -226,9 +228,9 @@ export function QRActivationPage() {
               className="space-y-5"
             >
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold mb-1">Configure Your QR</h2>
+                <h2 className="text-2xl font-bold mb-1">{t('qr.configure_heading')}</h2>
                 <p className="text-muted-foreground text-sm">
-                  Tell us how this QR code will be used.
+                  {t('qr.configure_desc')}
                 </p>
               </div>
 
@@ -237,10 +239,10 @@ export function QRActivationPage() {
                 <CardContent className="p-5 space-y-3">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="material-symbols-outlined text-primary" style={{ fontSize: '18px' }}>label</span>
-                    <p className="font-semibold text-sm">Give it a name</p>
+                    <p className="font-semibold text-sm">{t('qr.give_name')}</p>
                   </div>
                   <Input
-                    placeholder="e.g. My Medical ID, Black Wallet, Honda City"
+                    placeholder={t('qr.name_placeholder')}
                     value={qrName}
                     onChange={(e) => setQrName(e.target.value)}
                     className="h-11 rounded-xl"
@@ -254,10 +256,10 @@ export function QRActivationPage() {
                 <CardContent className="p-5">
                   <div className="flex items-center gap-2 mb-3">
                     <span className="material-symbols-outlined text-primary" style={{ fontSize: '18px' }}>category</span>
-                    <p className="font-semibold text-sm">Select type</p>
+                    <p className="font-semibold text-sm">{t('qr.select_type')}</p>
                   </div>
                   <div className="space-y-2">
-                    {QR_TYPES.map((type) => (
+                    {QR_TYPE_CONFIGS.map((type) => (
                       <button
                         key={type.id}
                         onClick={() => setQrType(type.id)}
@@ -271,8 +273,8 @@ export function QRActivationPage() {
                           <span className={`material-symbols-outlined filled ${type.iconColor}`} style={{ fontSize: '20px' }}>{type.icon}</span>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm">{type.label}</p>
-                          <p className="text-xs text-muted-foreground">{type.desc}</p>
+                          <p className="font-semibold text-sm">{t(type.labelKey)}</p>
+                          <p className="text-xs text-muted-foreground">{t(type.descKey)}</p>
                         </div>
                         {qrType === type.id && (
                           <span className="material-symbols-outlined text-primary filled" style={{ fontSize: '20px' }}>check_circle</span>
@@ -289,7 +291,7 @@ export function QRActivationPage() {
                   <CardContent className="p-5">
                     <div className="flex items-center gap-2 mb-3">
                       <span className="material-symbols-outlined text-primary" style={{ fontSize: '18px' }}>person</span>
-                      <p className="font-semibold text-sm">Link to profile</p>
+                      <p className="font-semibold text-sm">{t('qr.link_profile')}</p>
                     </div>
                     <div className="space-y-2">
                       {profiles.map((profile) => (
@@ -306,7 +308,7 @@ export function QRActivationPage() {
                             {(profile.name || 'P').slice(0, 2).toUpperCase()}
                           </div>
                           <div className="flex-1">
-                            <p className="font-medium text-sm">{profile.name || 'Unnamed'}</p>
+                            <p className="font-medium text-sm">{profile.name || t('common.unnamed')}</p>
                             {profile.relation && <p className="text-xs text-muted-foreground">{profile.relation}</p>}
                           </div>
                           {selectedProfile === profile.id && (
@@ -322,10 +324,10 @@ export function QRActivationPage() {
               <div className="flex gap-3">
                 <Button variant="outline" onClick={() => goTo(0)} className="flex-1 h-11">
                   <span className="material-symbols-outlined mr-1" style={{ fontSize: '18px' }}>arrow_back</span>
-                  Back
+                  {t('common.back')}
                 </Button>
                 <Button onClick={handleConfigureNext} className="flex-1 h-11 gap-1.5 shadow-md shadow-primary/20">
-                  Review
+                  {t('qr.review')}
                   <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_forward</span>
                 </Button>
               </div>
@@ -345,8 +347,8 @@ export function QRActivationPage() {
               className="space-y-5"
             >
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold mb-1">Review & Activate</h2>
-                <p className="text-muted-foreground text-sm">Confirm the details below before activating.</p>
+                <h2 className="text-2xl font-bold mb-1">{t('qr.review_activate')}</h2>
+                <p className="text-muted-foreground text-sm">{t('qr.confirm_details')}</p>
               </div>
 
               {/* Summary card */}
@@ -360,7 +362,7 @@ export function QRActivationPage() {
                         <span className="material-symbols-outlined text-muted-foreground" style={{ fontSize: '18px' }}>qr_code_2</span>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Passcode</p>
+                        <p className="text-xs text-muted-foreground">{t('qr.passcode')}</p>
                         <p className="font-mono font-bold tracking-widest">{passcode}</p>
                       </div>
                     </div>
@@ -374,7 +376,7 @@ export function QRActivationPage() {
                       <span className="material-symbols-outlined text-primary" style={{ fontSize: '18px' }}>label</span>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Display Name</p>
+                      <p className="text-xs text-muted-foreground">{t('qr.display_name')}</p>
                       <p className="font-semibold">{qrName}</p>
                     </div>
                   </div>
@@ -383,12 +385,12 @@ export function QRActivationPage() {
 
                   {/* Type */}
                   <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${selectedType?.iconBg}`}>
-                      <span className={`material-symbols-outlined filled ${selectedType?.iconColor}`} style={{ fontSize: '18px' }}>{selectedType?.icon}</span>
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${selectedTypeCfg?.iconBg}`}>
+                      <span className={`material-symbols-outlined filled ${selectedTypeCfg?.iconColor}`} style={{ fontSize: '18px' }}>{selectedTypeCfg?.icon}</span>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">QR Type</p>
-                      <p className="font-semibold">{selectedType?.label}</p>
+                      <p className="text-xs text-muted-foreground">{t('qr.qr_type')}</p>
+                      <p className="font-semibold">{selectedTypeCfg ? t(selectedTypeCfg.labelKey) : ''}</p>
                     </div>
                   </div>
 
@@ -400,7 +402,7 @@ export function QRActivationPage() {
                       {selectedProfileName.slice(0, 2).toUpperCase()}
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Linked Profile</p>
+                      <p className="text-xs text-muted-foreground">{t('qr.linked_profile')}</p>
                       <p className="font-semibold">{selectedProfileName}</p>
                     </div>
                   </div>
@@ -410,7 +412,7 @@ export function QRActivationPage() {
               <div className="flex gap-3">
                 <Button variant="outline" onClick={() => goTo(1)} className="flex-1 h-11" disabled={loading}>
                   <span className="material-symbols-outlined mr-1" style={{ fontSize: '18px' }}>arrow_back</span>
-                  Back
+                  {t('common.back')}
                 </Button>
                 <Button onClick={handleActivate} className="flex-1 h-11 gap-2 shadow-md shadow-primary/20" disabled={loading}>
                   {loading ? (
@@ -418,7 +420,7 @@ export function QRActivationPage() {
                   ) : (
                     <>
                       <span className="material-symbols-outlined filled" style={{ fontSize: '18px' }}>verified</span>
-                      Activate
+                      {t('qr.activate_btn')}
                     </>
                   )}
                 </Button>
@@ -448,13 +450,12 @@ export function QRActivationPage() {
               </motion.div>
 
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-                <h2 className="text-2xl font-bold mb-2">QR Code Activated!</h2>
+                <h2 className="text-2xl font-bold mb-2">{t('qr.activated_success')}</h2>
                 <p className="text-muted-foreground text-sm mb-2">
-                  <span className="font-semibold text-foreground">{qrName}</span> is now linked to{' '}
-                  <span className="font-semibold text-foreground">{selectedProfileName}</span>.
+                  {t('qr.activated_desc', { name: qrName, profile: selectedProfileName })}
                 </p>
                 <p className="text-xs text-muted-foreground mb-8">
-                  When someone scans this QR code, they'll see the relevant emergency information.
+                  {t('qr.activated_note')}
                 </p>
               </motion.div>
 
@@ -469,7 +470,7 @@ export function QRActivationPage() {
                   className="w-full h-12 gap-2 shadow-md shadow-primary/20"
                 >
                   <span className="material-symbols-outlined filled" style={{ fontSize: '18px' }}>qr_code_2</span>
-                  View My QR Codes
+                  {t('qr.view_my_qr')}
                 </Button>
                 <Button
                   variant="outline"
@@ -481,7 +482,7 @@ export function QRActivationPage() {
                   }}
                   className="w-full h-12"
                 >
-                  Activate Another QR
+                  {t('qr.activate_another')}
                 </Button>
               </motion.div>
             </motion.div>

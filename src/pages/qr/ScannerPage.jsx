@@ -1,22 +1,21 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { Html5QrcodeScanner } from 'html5-qrcode'
 import { Header } from '@/components/layout/Header'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
+import { recordScan } from '@/services/qrService'
 
-const steps = [
-  { icon: 'photo_camera', label: 'Allow camera access when prompted' },
-  { icon: 'center_focus_strong', label: 'Point at any WeSafe QR code' },
-  { icon: 'person', label: 'View emergency profile instantly' },
-]
+const STEP_ICONS = ['photo_camera', 'center_focus_strong', 'person']
 
 export function ScannerPage() {
   const [scanning, setScanning] = useState(false)
   const [lastResult, setLastResult] = useState(null)
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   useEffect(() => {
     let scanner = null
@@ -35,9 +34,11 @@ export function ScannerPage() {
           scanner.clear()
           if (decodedText.includes('wesafeqr.com/qr/')) {
             const passcode = decodedText.split('/qr/')[1]
+            // Record the scan event before navigating
+            recordScan(passcode)
             navigate(`/qr/${passcode}`)
           } else {
-            toast.success('QR Code scanned!')
+            toast.success(t('qr.scanned_success'))
           }
         },
         (errorMessage) => {
@@ -55,7 +56,7 @@ export function ScannerPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header title="Scan QR Code" showBack />
+      <Header title={t('qr.scan_title')} showBack />
 
       <div className="px-4 py-6 max-w-2xl mx-auto lg:px-6 lg:py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -77,14 +78,14 @@ export function ScannerPage() {
                     </div>
                   </div>
 
-                  <h2 className="text-2xl font-bold mb-2">Scan a QR Code</h2>
+                  <h2 className="text-2xl font-bold mb-2">{t('qr.scan_heading')}</h2>
                   <p className="text-muted-foreground text-sm mb-8 max-w-xs mx-auto leading-relaxed">
-                    Point your camera at a WeSafe QR code to instantly view the profile or item information.
+                    {t('qr.scan_desc')}
                   </p>
 
                   <Button onClick={() => setScanning(true)} size="lg" className="w-full max-w-xs h-12 gap-2 shadow-md shadow-primary/20">
                     <span className="material-symbols-outlined">photo_camera</span>
-                    Start Scanning
+                    {t('qr.start_scanning')}
                   </Button>
                 </CardContent>
               </Card>
@@ -92,10 +93,10 @@ export function ScannerPage() {
               {/* Steps */}
               <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3 text-center">
-                  How it works
+                  {t('qr.how_it_works')}
                 </p>
                 <div className="space-y-2">
-                  {steps.map((step, i) => (
+                  {[t('qr.step1_camera'), t('qr.step2_point'), t('qr.step3_view')].map((label, i) => (
                     <motion.div
                       key={i}
                       initial={{ opacity: 0, x: -16 }}
@@ -104,13 +105,13 @@ export function ScannerPage() {
                       className="flex items-center gap-4 p-4 bg-card rounded-xl border"
                     >
                       <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <span className="material-symbols-outlined text-primary" style={{ fontSize: '18px' }}>{step.icon}</span>
+                        <span className="material-symbols-outlined text-primary" style={{ fontSize: '18px' }}>{STEP_ICONS[i]}</span>
                       </div>
                       <div className="flex items-center gap-3 flex-1">
                         <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center flex-shrink-0">
                           {i + 1}
                         </span>
-                        <p className="text-sm font-medium">{step.label}</p>
+                        <p className="text-sm font-medium">{label}</p>
                       </div>
                     </motion.div>
                   ))}
@@ -125,14 +126,14 @@ export function ScannerPage() {
                     <span className="material-symbols-outlined text-primary" style={{ fontSize: '18px' }}>radio_button_checked</span>
                   </div>
                   <div>
-                    <p className="text-sm font-semibold">Scanning active</p>
-                    <p className="text-xs text-muted-foreground">Align QR code within the frame</p>
+                    <p className="text-sm font-semibold">{t('qr.scanning_active')}</p>
+                    <p className="text-xs text-muted-foreground">{t('qr.align_frame')}</p>
                   </div>
                   <span className="w-2 h-2 bg-emerald-500 rounded-full ml-auto animate-pulse" />
                 </div>
                 <div id="qr-reader" className="rounded-xl overflow-hidden" style={{ width: '100%' }} />
                 <Button onClick={() => setScanning(false)} variant="outline" className="w-full mt-4">
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
               </CardContent>
             </Card>
@@ -147,7 +148,7 @@ export function ScannerPage() {
                     <span className="material-symbols-outlined text-emerald-600 filled" style={{ fontSize: '18px' }}>check_circle</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-sm mb-1">Last Scanned Result</h3>
+                    <h3 className="font-semibold text-sm mb-1">{t('qr.last_result')}</h3>
                     <p className="text-xs text-muted-foreground break-all">{lastResult}</p>
                   </div>
                 </CardContent>

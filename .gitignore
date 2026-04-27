@@ -30,3 +30,15 @@ dist-ssr
 *.sw?
 
 .claude
+.firebase
+firestore.rules
+
+# Firebase project config (hosting managed by Netlify)
+.firebaserc
+firebase.json
+
+# Planning docs
+implementation_plan.md
+
+# Admin/utility scripts (not part of deployable app)
+scripts/
