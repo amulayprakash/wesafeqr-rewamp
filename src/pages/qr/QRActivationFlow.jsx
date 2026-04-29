@@ -409,7 +409,7 @@ function AuthScreen({ passcode, onSignIn, loading }) {
   )
 
   return (
-    <div className="relative flex min-h-full overflow-hidden bg-background">
+    <div className="relative flex flex-1 overflow-hidden bg-background">
       <AuthOrbs />
 
       {/* ── MOBILE layout (< lg) ── stacked single column */}
@@ -436,7 +436,7 @@ function AuthScreen({ passcode, onSignIn, loading }) {
       </div>
 
       {/* ── DESKTOP layout (≥ lg) ── two-column split */}
-      <div className="hidden lg:flex w-full min-h-full">
+      <div className="hidden lg:flex w-full flex-1">
         {/* Left — hero panel */}
         <div
           className="flex-1 flex flex-col items-center justify-center px-16 py-12 relative"
