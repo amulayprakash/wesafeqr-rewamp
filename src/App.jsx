@@ -1,24 +1,22 @@
-import { Suspense, lazy, useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useState, useContext } from 'react'
 import { BrowserRouter, Routes, Route, useLocation, useSearchParams } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { AuthProvider } from '@/contexts/AuthContext'
+import { AuthProvider, AuthContext } from '@/contexts/AuthContext'
 import { ProfileProvider } from '@/contexts/ProfileContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { AppShell } from '@/components/layout/AppShell'
 import { ProtectedRoute } from '@/components/guards/ProtectedRoute'
 
-// ── QR Activation Flows ───────────────────────────────────────────────────────
-import { QRActivationFlow } from '@/pages/qr/QRActivationFlow'
-import { LNFQRActivationFlow } from '@/pages/qr/LNFQRActivationFlow'
-
 // ── Eagerly loaded (needed for first paint) ───────────────────────────────────
-import { LoginPage }     from '@/pages/auth/LoginPage'
-import { DashboardPage } from '@/pages/dashboard/DashboardPage'
-import { QRDisplayPage } from '@/pages/scan-display/QRDisplayPage'
-import { NotFoundPage }  from '@/pages/NotFoundPage'
+import { LoginPage }    from '@/pages/auth/LoginPage'
+import { NotFoundPage } from '@/pages/NotFoundPage'
 
 // ── Lazily loaded (loaded only when the user navigates there) ─────────────────
+const QRActivationFlow      = lazy(() => import('@/pages/qr/QRActivationFlow').then(m => ({ default: m.QRActivationFlow })))
+const LNFQRActivationFlow   = lazy(() => import('@/pages/qr/LNFQRActivationFlow').then(m => ({ default: m.LNFQRActivationFlow })))
+const DashboardPage         = lazy(() => import('@/pages/dashboard/DashboardPage').then(m => ({ default: m.DashboardPage })))
+const QRDisplayPage         = lazy(() => import('@/pages/scan-display/QRDisplayPage').then(m => ({ default: m.QRDisplayPage })))
 const PersonalProfilePage   = lazy(() => import('@/pages/profile/PersonalProfilePage').then(m => ({ default: m.PersonalProfilePage })))
 const EmergencyContactsPage = lazy(() => import('@/pages/profile/EmergencyContactsPage').then(m => ({ default: m.EmergencyContactsPage })))
 const MedicalPage           = lazy(() => import('@/pages/profile/MedicalPage').then(m => ({ default: m.MedicalPage })))
@@ -40,16 +38,32 @@ const OnboardingPage        = lazy(() => import('@/pages/onboarding/OnboardingPa
 function PageLoader() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
-      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-10 h-10 border-[3px] border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="space-y-2">
+          <div className="w-48 h-2 bg-muted animate-pulse rounded-full" />
+          <div className="w-32 h-2 bg-muted animate-pulse rounded-full mx-auto" />
+        </div>
+      </div>
     </div>
   )
+}
+
+// ── Blocks render until Firebase Auth resolves — prevents flash ───────────────
+function AuthGate({ children }) {
+  const { loading } = useContext(AuthContext)
+  if (loading) return <PageLoader />
+  return children
 }
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5,
+      gcTime: 1000 * 60 * 10,
       retry: 1,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
     },
   },
 })
@@ -166,26 +180,27 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-      <AuthProvider>
-        <ProfileProvider>
-          <BrowserRouter>
-            <ScrollToTop />
-            <AppRoutes />
-
-            <Toaster
-              position="top-center"
-              toastOptions={{
-                duration: 3000,
-                style: {
-                  background: 'hsl(var(--card))',
-                  color: 'hsl(var(--card-foreground))',
-                  border: '1px solid hsl(var(--border))',
-                },
-              }}
-            />
-          </BrowserRouter>
-        </ProfileProvider>
-      </AuthProvider>
+        <AuthProvider>
+          <ProfileProvider>
+            <BrowserRouter>
+              <ScrollToTop />
+              <AuthGate>
+                <AppRoutes />
+              </AuthGate>
+              <Toaster
+                position="top-center"
+                toastOptions={{
+                  duration: 3000,
+                  style: {
+                    background: 'hsl(var(--card))',
+                    color: 'hsl(var(--card-foreground))',
+                    border: '1px solid hsl(var(--border))',
+                  },
+                }}
+              />
+            </BrowserRouter>
+          </ProfileProvider>
+        </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
   )

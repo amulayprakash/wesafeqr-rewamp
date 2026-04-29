@@ -15,6 +15,9 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          if (id.includes('node_modules/html5-qrcode')) {
+            return 'qr-scanner'
+          }
           if (id.includes('firebase/auth') || (id.includes('node_modules/firebase') && !id.includes('firestore') && !id.includes('messaging'))) {
             return 'firebase-core'
           }

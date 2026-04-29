@@ -1,4 +1,4 @@
-import { useContext } from 'react'
+import { useContext, useMemo, memo } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
@@ -23,7 +23,7 @@ const BRAND = {
 }
 
 // ── SVG Progress Ring ──────────────────────────────────────────────────────────
-function ProgressRing({ percentage, size = 100, strokeWidth = 9, color = BRAND.primary, label, showLabel = true }) {
+const ProgressRing = memo(function ProgressRing({ percentage, size = 100, strokeWidth = 9, color = BRAND.primary, label, showLabel = true }) {
   const radius = (size - strokeWidth) / 2
   const circumference = 2 * Math.PI * radius
   const dashOffset = circumference - (percentage / 100) * circumference
@@ -59,10 +59,10 @@ function ProgressRing({ percentage, size = 100, strokeWidth = 9, color = BRAND.p
       )}
     </div>
   )
-}
+})
 
 // ── Horizontal progress bar ────────────────────────────────────────────────────
-function HealthBar({ label, icon, percentage, color, loading }) {
+const HealthBar = memo(function HealthBar({ label, icon, percentage, color, loading }) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
@@ -85,7 +85,7 @@ function HealthBar({ label, icon, percentage, color, loading }) {
       </div>
     </div>
   )
-}
+})
 
 function StatSkeleton() {
   return <span className="inline-block w-10 h-8 bg-muted animate-pulse rounded-lg align-middle" />
@@ -196,17 +196,17 @@ export function DashboardPage() {
   const vaccineCount      = medicalVaccines.length
   const procedureCount    = medicalProcedures.length
 
-  const MEDICAL_CARDS = [
+  const MEDICAL_CARDS = useMemo(() => [
     { id: 'mediccond',    label: 'Conditions',  icon: 'monitor_heart', color: '#F43F5E', count: conditionCount,  loading: loadingMedical,      desc: conditionCount === 1 ? 'Condition' : 'Conditions' },
     { id: 'medications',  label: 'Medications', icon: 'medication',    color: '#6672C8', count: medicationCount, loading: loadingMedications,   desc: medicationCount === 1 ? 'Medication' : 'Medications' },
     { id: 'allergies',    label: 'Allergies',   icon: 'warning',       color: '#D97706', count: allergyCount,    loading: loadingAllergies,     desc: allergyCount === 1 ? 'Allergen' : 'Allergens' },
     { id: 'vaccinations', label: 'Vaccines',    icon: 'vaccines',      color: '#059669', count: vaccineCount,    loading: loadingVaccines,      desc: vaccineCount === 1 ? 'Vaccine' : 'Vaccines' },
     { id: 'procedures',   label: 'Procedures',  icon: 'surgical',      color: '#7C3AED', count: procedureCount,  loading: loadingProcedures,    desc: procedureCount === 1 ? 'Procedure' : 'Procedures' },
-  ]
+  ], [conditionCount, medicationCount, allergyCount, vaccineCount, procedureCount, loadingMedical, loadingMedications, loadingAllergies, loadingVaccines, loadingProcedures])
 
   // ── Score color ──────────────────────────────────────────────────────────────
-  const overallScore = Math.round((profilePct + contactPct + medicalPct) / 3)
-  const scoreColor = overallScore >= 70 ? BRAND.emerald : overallScore >= 35 ? BRAND.amber : BRAND.rose
+  const overallScore = useMemo(() => Math.round((profilePct + contactPct + medicalPct) / 3), [profilePct, contactPct, medicalPct])
+  const scoreColor = useMemo(() => overallScore >= 70 ? BRAND.emerald : overallScore >= 35 ? BRAND.amber : BRAND.rose, [overallScore])
 
   return (
     <div className="min-h-screen bg-background">
@@ -673,7 +673,7 @@ export function DashboardPage() {
             />
             {/* Large logo watermark */}
             <div className="absolute top-1/2 right-8 -translate-y-1/2 pointer-events-none select-none opacity-[0.12]">
-              <img src="/logo1.png" alt="" className="w-36 h-36 rounded-3xl object-cover" style={{ filter: 'brightness(10)' }} />
+              <img src="/logo1.png" alt="" className="w-36 h-36 rounded-3xl object-cover" style={{ filter: 'brightness(10)' }} loading="lazy" decoding="async" />
             </div>
 
             <div className="relative flex items-center gap-6">
