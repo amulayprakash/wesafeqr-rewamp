@@ -208,7 +208,13 @@ export function MyQRCodesPage() {
                           </Button>
                           <Button
                             variant="outline" size="sm" className="flex-1 h-9 rounded-xl font-semibold press-scale"
-                            onClick={() => navigate(`/qr/${code}`)}
+                            onClick={() => {
+                              if (qr.type === 'lostfound' || qr.type === 'vehicle') {
+                                window.open(`https://lost.wesafeqr.com/${code}`, '_blank')
+                              } else {
+                                navigate(`/qr/${code}`)
+                              }
+                            }}
                           >
                             <span className="material-symbols-outlined text-base mr-1.5">open_in_new</span>
                             {t('qr.preview')}
