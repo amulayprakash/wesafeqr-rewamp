@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, Navigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
@@ -1064,7 +1064,7 @@ export function QRDisplayPage() {
 
   if (loadingQR) return <LoadingState />
   if (errorQR || !qr) return <NotFoundState passcode={passcode} />
-  if (!qr.isActive || !qr.uid) return <NotActivatedState passcode={passcode} />
+  if (!qr.isActive || !qr.uid) return <Navigate to={`/?qr=${passcode}`} replace />
 
   // ── Derived data ──────────────────────────────────────────────────────────
 
