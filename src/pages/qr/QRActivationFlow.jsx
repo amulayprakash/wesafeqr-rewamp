@@ -124,279 +124,354 @@ function AuthScreen({ passcode, onSignIn, loading }) {
     toast('OTP feature coming soon')
   }
 
-  return (
-    <div className="relative flex flex-col min-h-full overflow-hidden bg-background">
-      <AuthOrbs />
-
-      {/* Hero section */}
-      <div
-        className="relative flex flex-col items-center pt-12 pb-10 px-6"
-        style={{
-          background: 'linear-gradient(180deg, hsl(237 46% 62% / 0.07) 0%, transparent 100%)',
-        }}
+  // ── Shared hero content ───────────────────────────────────────────────────
+  const HeroContent = ({ large = false }) => (
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: -14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+        className={`flex items-center gap-2.5 ${large ? 'mb-12' : 'mb-8'}`}
       >
-        {/* Brand */}
         <motion.div
-          initial={{ opacity: 0, y: -14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-          className="flex items-center gap-2.5 mb-8"
+          animate={{
+            boxShadow: [
+              '0 0 0 0px hsl(237 46% 62% / 0)',
+              '0 0 0 8px hsl(237 46% 62% / 0.12)',
+              '0 0 0 0px hsl(237 46% 62% / 0)',
+            ],
+          }}
+          transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
+          className="rounded-[13px]"
         >
-          <motion.div
-            animate={{
-              boxShadow: [
-                '0 0 0 0px hsl(237 46% 62% / 0)',
-                '0 0 0 8px hsl(237 46% 62% / 0.12)',
-                '0 0 0 0px hsl(237 46% 62% / 0)',
-              ],
+          <div
+            className={`${large ? 'w-12 h-12' : 'w-10 h-10'} rounded-[13px] flex items-center justify-center overflow-hidden`}
+            style={{
+              background: 'linear-gradient(140deg, hsl(237 46% 35%) 0%, hsl(237 46% 52%) 60%, hsl(350 55% 48%) 100%)',
+              boxShadow: '0 4px 16px hsl(237 46% 62% / 0.32)',
             }}
-            transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
-            className="rounded-[13px]"
           >
-            <div
-              className="w-10 h-10 rounded-[13px] flex items-center justify-center overflow-hidden"
-              style={{
-                background: 'linear-gradient(140deg, hsl(237 46% 35%) 0%, hsl(237 46% 52%) 60%, hsl(350 55% 48%) 100%)',
-                boxShadow: '0 4px 16px hsl(237 46% 62% / 0.32)',
-              }}
-            >
-              <img src="/logo1.png" alt="WeSafe QR" className="w-7 h-7 object-contain" />
-            </div>
-          </motion.div>
-          <div className="leading-none">
-            <p className="text-[15px] font-bold text-foreground tracking-tight">WeSafe QR</p>
-            <p
-              className="text-[10px] font-semibold tracking-widest uppercase mt-0.5"
-              style={{ color: 'hsl(237 46% 62%)' }}
-            >
-              Safety Reimagined
-            </p>
+            <img src="/logo1.png" alt="WeSafe QR" className={`${large ? 'w-8 h-8' : 'w-7 h-7'} object-contain`} />
           </div>
         </motion.div>
-
-        {/* Animated QR icon */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1, duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-          className="mb-6"
-        >
-          <AnimatedQRIcon />
-        </motion.div>
-
-        {/* Heading */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.22, duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-          className="text-center"
-        >
-          <h2 className="text-[26px] font-bold tracking-tight text-foreground leading-tight mb-1.5">
-            Activate Your QR
-          </h2>
-          <p className="text-muted-foreground text-[14px] mb-3 leading-snug">
-            Sign in to link and protect your QR code
-          </p>
-          <motion.span
-            initial={{ opacity: 0, scale: 0.85 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.35 }}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-mono font-bold"
-            style={{
-              background: 'hsl(237 46% 62% / 0.12)',
-              color: 'hsl(237 46% 52%)',
-              border: '1px solid hsl(237 46% 62% / 0.2)',
-            }}
+        <div className="leading-none">
+          <p className={`${large ? 'text-[17px]' : 'text-[15px]'} font-bold text-foreground tracking-tight`}>WeSafe QR</p>
+          <p
+            className="text-[10px] font-semibold tracking-widest uppercase mt-0.5"
+            style={{ color: 'hsl(237 46% 62%)' }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>qr_code_2</span>
-            {passcode}
-          </motion.span>
-        </motion.div>
-      </div>
+            Safety Reimagined
+          </p>
+        </div>
+      </motion.div>
 
-      {/* Auth card */}
       <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3, duration: 0.55, ease: [0.23, 1, 0.32, 1] }}
-        className="relative z-10 mx-4 mb-6"
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.1, duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+        className={large ? 'mb-10 scale-125' : 'mb-6'}
       >
-        <div
-          className="rounded-3xl border border-border/60 bg-card px-6 py-6 space-y-5"
+        <AnimatedQRIcon />
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.22, duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+        className={`text-center ${large ? 'max-w-xs' : ''}`}
+      >
+        <h2 className={`${large ? 'text-[32px]' : 'text-[26px]'} font-bold tracking-tight text-foreground leading-tight mb-2`}>
+          Activate Your QR
+        </h2>
+        <p className={`text-muted-foreground ${large ? 'text-[15px]' : 'text-[14px]'} mb-4 leading-snug`}>
+          Sign in to link and protect your QR code
+        </p>
+        <motion.span
+          initial={{ opacity: 0, scale: 0.85 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.35 }}
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-mono font-bold"
           style={{
-            boxShadow: '0 4px 32px hsl(237 46% 62% / 0.08), 0 1px 2px hsl(0 0% 0% / 0.04), inset 0 1px 0 rgba(255,255,255,0.7)',
+            background: 'hsl(237 46% 62% / 0.12)',
+            color: 'hsl(237 46% 52%)',
+            border: '1px solid hsl(237 46% 62% / 0.2)',
           }}
         >
-          {/* Google button */}
-          <Button
-            onClick={onSignIn}
-            disabled={loading}
-            className="w-full h-[50px] text-[15px] gap-3 font-bold rounded-2xl relative overflow-hidden group press-scale"
+          <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>qr_code_2</span>
+          {passcode}
+        </motion.span>
+      </motion.div>
+
+      {large && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45 }}
+          className="mt-10 flex flex-col gap-3 w-full max-w-[260px]"
+        >
+          {[
+            { icon: 'shield_lock', label: 'End-to-end encrypted' },
+            { icon: 'bolt', label: 'Instant QR activation' },
+            { icon: 'family_restroom', label: 'Protect your loved ones' },
+          ].map(({ icon, label }) => (
+            <div
+              key={icon}
+              className="flex items-center gap-3 px-4 py-3 rounded-2xl"
+              style={{
+                background: 'hsl(237 46% 62% / 0.07)',
+                border: '1px solid hsl(237 46% 62% / 0.12)',
+              }}
+            >
+              <span className="material-symbols-outlined filled" style={{ fontSize: '18px', color: 'hsl(237 46% 52%)' }}>{icon}</span>
+              <span className="text-sm font-medium text-foreground">{label}</span>
+            </div>
+          ))}
+        </motion.div>
+      )}
+    </>
+  )
+
+  // ── Auth form card ────────────────────────────────────────────────────────
+  const AuthCard = () => (
+    <div
+      className="rounded-3xl border border-border/60 bg-card px-6 py-6 space-y-5"
+      style={{
+        boxShadow: '0 4px 32px hsl(237 46% 62% / 0.08), 0 1px 2px hsl(0 0% 0% / 0.04), inset 0 1px 0 rgba(255,255,255,0.7)',
+      }}
+    >
+      <Button
+        onClick={onSignIn}
+        disabled={loading}
+        className="w-full h-[50px] text-[15px] gap-3 font-bold rounded-2xl relative overflow-hidden group press-scale"
+        style={{
+          boxShadow: '0 5px 20px hsl(237 46% 62% / 0.32), inset 0 1px 0 rgba(255,255,255,0.2)',
+        }}
+      >
+        <span
+          className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out pointer-events-none"
+          style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.14), transparent)' }}
+        />
+        <AnimatePresence mode="wait">
+          {loading ? (
+            <motion.div
+              key="spin"
+              initial={{ opacity: 0, scale: 0.75 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.75 }}
+              className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"
+            />
+          ) : (
+            <motion.svg
+              key="g"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="w-5 h-5 relative flex-shrink-0"
+              viewBox="0 0 24 24"
+            >
+              <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+              <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+              <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+              <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+            </motion.svg>
+          )}
+        </AnimatePresence>
+        <span className="relative">Continue with Google</span>
+      </Button>
+
+      <div className="flex items-center gap-3">
+        <div className="flex-1 h-px bg-border/70" />
+        <span className="text-muted-foreground text-[11px] font-semibold uppercase tracking-widest">or</span>
+        <div className="flex-1 h-px bg-border/70" />
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setShowOtp(v => !v)}
+        className="w-full flex items-center justify-between px-4 py-3 rounded-2xl border-2 transition-all duration-200 text-left group"
+        style={{
+          borderColor: showOtp ? 'hsl(237 46% 62%)' : 'hsl(var(--border))',
+          background: showOtp ? 'hsl(237 46% 62% / 0.05)' : 'transparent',
+        }}
+      >
+        <div className="flex items-center gap-2.5">
+          <div
+            className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
             style={{
-              boxShadow: '0 5px 20px hsl(237 46% 62% / 0.32), inset 0 1px 0 rgba(255,255,255,0.2)',
+              background: showOtp ? 'hsl(237 46% 62% / 0.12)' : 'hsl(var(--muted))',
             }}
           >
             <span
-              className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out pointer-events-none"
-              style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.14), transparent)' }}
-            />
-            <AnimatePresence mode="wait">
-              {loading ? (
-                <motion.div
-                  key="spin"
-                  initial={{ opacity: 0, scale: 0.75 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.75 }}
-                  className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"
-                />
-              ) : (
-                <motion.svg
-                  key="g"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="w-5 h-5 relative flex-shrink-0"
-                  viewBox="0 0 24 24"
-                >
-                  <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                  <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                  <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                  <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                </motion.svg>
-              )}
-            </AnimatePresence>
-            <span className="relative">Continue with Google</span>
-          </Button>
-
-          {/* Divider */}
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-border/70" />
-            <span className="text-muted-foreground text-[11px] font-semibold uppercase tracking-widest">or</span>
-            <div className="flex-1 h-px bg-border/70" />
-          </div>
-
-          {/* OTP toggle button */}
-          <button
-            type="button"
-            onClick={() => setShowOtp(v => !v)}
-            className="w-full flex items-center justify-between px-4 py-3 rounded-2xl border-2 transition-all duration-200 text-left group"
-            style={{
-              borderColor: showOtp ? 'hsl(237 46% 62%)' : 'hsl(var(--border))',
-              background: showOtp ? 'hsl(237 46% 62% / 0.05)' : 'transparent',
-            }}
-          >
-            <div className="flex items-center gap-2.5">
-              <div
-                className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{
-                  background: showOtp ? 'hsl(237 46% 62% / 0.12)' : 'hsl(var(--muted))',
-                }}
-              >
-                <span
-                  className="material-symbols-outlined"
-                  style={{ fontSize: '17px', color: showOtp ? 'hsl(237 46% 52%)' : 'hsl(var(--muted-foreground))' }}
-                >
-                  phone_iphone
-                </span>
-              </div>
-              <div>
-                <p
-                  className="text-sm font-semibold"
-                  style={{ color: showOtp ? 'hsl(237 46% 52%)' : 'hsl(var(--foreground))' }}
-                >
-                  Login with OTP
-                </p>
-                <p className="text-xs text-muted-foreground">Use your phone number</p>
-              </div>
-            </div>
-            <motion.span
-              animate={{ rotate: showOtp ? 180 : 0 }}
-              transition={{ duration: 0.25 }}
-              className="material-symbols-outlined text-muted-foreground"
-              style={{ fontSize: '18px' }}
+              className="material-symbols-outlined"
+              style={{ fontSize: '17px', color: showOtp ? 'hsl(237 46% 52%)' : 'hsl(var(--muted-foreground))' }}
             >
-              expand_more
-            </motion.span>
-          </button>
-
-          {/* OTP panel */}
-          <AnimatePresence>
-            {showOtp && (
-              <motion.div
-                initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                animate={{ opacity: 1, height: 'auto', marginTop: 0 }}
-                exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
-                className="overflow-hidden"
-              >
-                <div className="space-y-3 pt-1">
-                  <div className="flex gap-2">
-                    <div
-                      className="flex items-center justify-center w-[58px] h-12 rounded-xl border flex-shrink-0 text-sm font-bold"
-                      style={{
-                        borderColor: 'hsl(var(--border))',
-                        background: 'hsl(var(--muted))',
-                        color: 'hsl(var(--muted-foreground))',
-                      }}
-                    >
-                      +91
-                    </div>
-                    <Input
-                      type="tel"
-                      inputMode="numeric"
-                      placeholder="10-digit number"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                      className="flex-1 h-12 rounded-xl text-[15px]"
-                      maxLength={10}
-                    />
-                  </div>
-                  <Button
-                    onClick={handleSendOtp}
-                    disabled={otpSending}
-                    variant="outline"
-                    className="w-full h-12 gap-2 rounded-xl font-semibold text-[15px] border-border/80 hover:border-primary/40 hover:bg-primary/[0.04] transition-all duration-300 press-scale"
-                  >
-                    {otpSending ? (
-                      <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <>
-                        <span className="material-symbols-outlined" style={{ fontSize: '17px' }}>sms</span>
-                        Send OTP
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              phone_iphone
+            </span>
+          </div>
+          <div>
+            <p
+              className="text-sm font-semibold"
+              style={{ color: showOtp ? 'hsl(237 46% 52%)' : 'hsl(var(--foreground))' }}
+            >
+              Login with OTP
+            </p>
+            <p className="text-xs text-muted-foreground">Use your phone number</p>
+          </div>
         </div>
-      </motion.div>
+        <motion.span
+          animate={{ rotate: showOtp ? 180 : 0 }}
+          transition={{ duration: 0.25 }}
+          className="material-symbols-outlined text-muted-foreground"
+          style={{ fontSize: '18px' }}
+        >
+          expand_more
+        </motion.span>
+      </button>
 
-      {/* Security badge + terms */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.55 }}
-        className="relative z-10 flex flex-col items-center gap-3 px-6 pb-8"
+      <AnimatePresence>
+        {showOtp && (
+          <motion.div
+            initial={{ opacity: 0, height: 0, marginTop: 0 }}
+            animate={{ opacity: 1, height: 'auto', marginTop: 0 }}
+            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+            transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="space-y-3 pt-1">
+              <div className="flex gap-2">
+                <div
+                  className="flex items-center justify-center w-[58px] h-12 rounded-xl border flex-shrink-0 text-sm font-bold"
+                  style={{
+                    borderColor: 'hsl(var(--border))',
+                    background: 'hsl(var(--muted))',
+                    color: 'hsl(var(--muted-foreground))',
+                  }}
+                >
+                  +91
+                </div>
+                <Input
+                  type="tel"
+                  inputMode="numeric"
+                  placeholder="10-digit number"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  className="flex-1 h-12 rounded-xl text-[15px]"
+                  maxLength={10}
+                />
+              </div>
+              <Button
+                onClick={handleSendOtp}
+                disabled={otpSending}
+                variant="outline"
+                className="w-full h-12 gap-2 rounded-xl font-semibold text-[15px] border-border/80 hover:border-primary/40 hover:bg-primary/[0.04] transition-all duration-300 press-scale"
+              >
+                {otpSending ? (
+                  <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined" style={{ fontSize: '17px' }}>sms</span>
+                    Send OTP
+                  </>
+                )}
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+
+  // ── Security footer ───────────────────────────────────────────────────────
+  const SecurityFooter = () => (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.55 }}
+      className="flex flex-col items-center gap-3"
+    >
+      <div
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+        style={{
+          background: 'hsl(142 71% 45% / 0.08)',
+          color: 'hsl(142 71% 32%)',
+          border: '1px solid hsl(142 71% 45% / 0.18)',
+        }}
       >
+        <span className="material-symbols-outlined filled" style={{ fontSize: '13px' }}>lock</span>
+        End-to-end encrypted · Your data is safe
+      </div>
+      <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
+        By continuing, you agree to WeSafe's{' '}
+        <a href="/legal/terms" className="text-primary font-semibold underline underline-offset-2 hover:opacity-75">Terms of Service</a>
+        {' '}and{' '}
+        <a href="/legal/privacy" className="text-primary font-semibold underline underline-offset-2 hover:opacity-75">Privacy Policy</a>.
+      </p>
+    </motion.div>
+  )
+
+  return (
+    <div className="relative flex min-h-full overflow-hidden bg-background">
+      <AuthOrbs />
+
+      {/* ── MOBILE layout (< lg) ── stacked single column */}
+      <div className="lg:hidden relative flex flex-col w-full">
         <div
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+          className="relative flex flex-col items-center pt-12 pb-10 px-6"
+          style={{ background: 'linear-gradient(180deg, hsl(237 46% 62% / 0.07) 0%, transparent 100%)' }}
+        >
+          <HeroContent />
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.55, ease: [0.23, 1, 0.32, 1] }}
+          className="relative z-10 mx-4 mb-6"
+        >
+          <AuthCard />
+        </motion.div>
+
+        <div className="relative z-10 flex flex-col items-center gap-3 px-6 pb-8">
+          <SecurityFooter />
+        </div>
+      </div>
+
+      {/* ── DESKTOP layout (≥ lg) ── two-column split */}
+      <div className="hidden lg:flex w-full min-h-full">
+        {/* Left — hero panel */}
+        <div
+          className="flex-1 flex flex-col items-center justify-center px-16 py-12 relative"
           style={{
-            background: 'hsl(142 71% 45% / 0.08)',
-            color: 'hsl(142 71% 32%)',
-            border: '1px solid hsl(142 71% 45% / 0.18)',
+            background: 'linear-gradient(145deg, hsl(237 46% 62% / 0.09) 0%, hsl(237 46% 62% / 0.04) 60%, transparent 100%)',
+            borderRight: '1px solid hsl(237 46% 62% / 0.1)',
           }}
         >
-          <span className="material-symbols-outlined filled" style={{ fontSize: '13px' }}>lock</span>
-          End-to-end encrypted · Your data is safe
+          <div
+            className="absolute bottom-0 left-0 w-[480px] h-[480px] rounded-full pointer-events-none"
+            style={{ background: 'radial-gradient(circle, hsl(350 82% 60% / 0.06) 0%, transparent 65%)', transform: 'translate(-30%, 30%)' }}
+          />
+          <HeroContent large />
         </div>
-        <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
-          By continuing, you agree to WeSafe's{' '}
-          <a href="/legal/terms" className="text-primary font-semibold underline underline-offset-2 hover:opacity-75">Terms of Service</a>
-          {' '}and{' '}
-          <a href="/legal/privacy" className="text-primary font-semibold underline underline-offset-2 hover:opacity-75">Privacy Policy</a>.
-        </p>
-      </motion.div>
+
+        {/* Right — auth card panel */}
+        <motion.div
+          initial={{ opacity: 0, x: 24 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2, duration: 0.55, ease: [0.23, 1, 0.32, 1] }}
+          className="w-[480px] flex-shrink-0 flex flex-col items-center justify-center px-10 py-12 gap-8"
+        >
+          <div className="text-center w-full">
+            <p className="text-[13px] font-semibold uppercase tracking-widest mb-1" style={{ color: 'hsl(237 46% 62%)' }}>Step 1 of 2</p>
+            <h3 className="text-[22px] font-bold tracking-tight text-foreground">Sign in to continue</h3>
+            <p className="text-muted-foreground text-sm mt-1">Choose how you'd like to authenticate</p>
+          </div>
+
+          <div className="w-full">
+            <AuthCard />
+          </div>
+
+          <SecurityFooter />
+        </motion.div>
+      </div>
     </div>
   )
 }
@@ -628,13 +703,11 @@ export function QRActivationFlow({ passcode, onDone }) {
   const [error, setError] = useState(null)
   const [signingIn, setSigningIn] = useState(false)
 
-  // Build compound uid for comparison: "{uid} {subId}"
   const compoundUid = useCallback(
     (uid, childId) => uid + ' ' + childId.replace(/^child/, ''),
     []
   )
 
-  // ── Initial check ────────────────────────────────────────────────────────────
   const runCheck = useCallback(async () => {
     setFlowState('CHECKING')
     setError(null)
@@ -649,7 +722,6 @@ export function QRActivationFlow({ passcode, onDone }) {
       }
 
       if (result.consumed) {
-        // Compare against current user's compound uid for all profiles
         const ownUids = user
           ? profiles.map((p) => compoundUid(user.uid, p.id))
           : []
@@ -676,7 +748,6 @@ export function QRActivationFlow({ passcode, onDone }) {
     }
   }, [passcode, user, profiles, compoundUid])
 
-  // Run check once auth + profiles are resolved
   useEffect(() => {
     if (!authLoading && !loadingProfiles) {
       runCheck()
@@ -684,7 +755,6 @@ export function QRActivationFlow({ passcode, onDone }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, loadingProfiles])
 
-  // Transition forward after sign-in
   useEffect(() => {
     if (flowState === 'AUTH_REQUIRED' && user && !authLoading && !loadingProfiles) {
       if (profiles.length === 0) {
@@ -695,12 +765,10 @@ export function QRActivationFlow({ passcode, onDone }) {
     }
   }, [user, authLoading, loadingProfiles, flowState, profiles.length])
 
-  // ── Handlers ─────────────────────────────────────────────────────────────────
   const handleSignIn = async () => {
     setSigningIn(true)
     try {
       await signInWithGoogle()
-      // useEffect above will transition the state
     } catch (e) {
       toast.error('Sign in failed. Please try again.')
     } finally {
