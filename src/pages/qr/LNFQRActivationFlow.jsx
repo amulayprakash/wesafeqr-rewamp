@@ -1042,7 +1042,9 @@ export function LNFQRActivationFlow({ passcode, onDone }) {
 
       if (!user) { setFlowState('AUTH_REQUIRED'); return }
       if (profiles.length === 0) { setFlowState('ONBOARDING'); return }
-      setFlowState('PROFILE_PICK')
+      const selfProfile = profiles.find((p) => p.id === 'child1') || profiles[0]
+      setSelectedProfileId(selfProfile.id)
+      setFlowState('ITEM_REGISTRATION')
     } catch (e) {
       setError(e.message)
       setFlowState('ERROR')
@@ -1060,9 +1062,15 @@ export function LNFQRActivationFlow({ passcode, onDone }) {
   // Forward to next state after sign-in
   useEffect(() => {
     if (flowState === 'AUTH_REQUIRED' && user && !authLoading && !loadingProfiles) {
-      setFlowState(profiles.length === 0 ? 'ONBOARDING' : 'PROFILE_PICK')
+      if (profiles.length === 0) {
+        setFlowState('ONBOARDING')
+      } else {
+        const selfProfile = profiles.find((p) => p.id === 'child1') || profiles[0]
+        setSelectedProfileId(selfProfile.id)
+        setFlowState('ITEM_REGISTRATION')
+      }
     }
-  }, [user, authLoading, loadingProfiles, flowState, profiles.length])
+  }, [user, authLoading, loadingProfiles, flowState, profiles])
 
   const handleSignIn = async () => {
     setSigningIn(true)
@@ -1179,7 +1187,7 @@ export function LNFQRActivationFlow({ passcode, onDone }) {
               exit={{ opacity: 0 }}
               className="flex-1"
             >
-              <OnboardingPage onComplete={handleOnboardingComplete} />
+              <OnboardingPage onComplete={handleOnboardingComplete} lnfMode />
             </motion.div>
           )}
 

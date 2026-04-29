@@ -12,6 +12,161 @@ import toast from 'react-hot-toast'
 
 const RELATIONSHIPS = ['Parent', 'Spouse', 'Sibling', 'Friend', 'Doctor', 'Other']
 
+// ─── LNF-mode simplified onboarding (name + phone + email only) ───────────────
+function StepLNFInfo({ onComplete }) {
+  const { user } = useAuth()
+  const hasEmail = !!user?.email
+  const [form, setForm] = useState({
+    name: '',
+    phone: '',
+    email: user?.email || '',
+  })
+  const [saving, setSaving] = useState(false)
+  const set = (f) => (e) => setForm((p) => ({ ...p, [f]: e.target.value }))
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!form.name.trim()) { toast.error('Name is required'); return }
+    if (!form.phone.trim()) { toast.error('Phone number is required'); return }
+    if (!hasEmail && !form.email.trim()) { toast.error('Email is required'); return }
+    setSaving(true)
+    try {
+      await setDoc(
+        doc(db, 'Users', user.uid),
+        { ActiveStatus: true, key: generateUserKey(), uid: user.uid },
+        { merge: true }
+      )
+      const childId = 'child1'
+      await setDoc(
+        doc(db, 'Users', user.uid, 'ChildList', childId),
+        { name: form.name.trim(), relationship: 'Self', createdAt: serverTimestamp() }
+      )
+      await setDoc(
+        doc(db, 'Users', user.uid, 'ChildList', childId, 'data', 'personal_information'),
+        {
+          ActiveStatus: true,
+          QRCodeDocID: '',
+          address: '',
+          addressCity: '',
+          addressCountry: '',
+          addressHouse: '',
+          addressLocality: '',
+          addressPincode: '',
+          addressState: '',
+          bloodGroup: '',
+          childListUid: childId,
+          dob: '',
+          email: form.email.trim() || user.email || '',
+          gender: '',
+          height: '',
+          heightUnit: 'cm',
+          info_type: '',
+          name: form.name.trim(),
+          origin: 'wesafe-web',
+          originalProfilePicUrl: user.photoURL || '',
+          phone: form.phone.trim(),
+          phoneNumber: form.phone.trim(),
+          profilePicUrl: user.photoURL || '',
+          qrPasscode: '',
+          relation: 'Self',
+          selectedFile: '',
+          userUid: user.uid,
+          weight: '',
+          weightUnit: 'kg',
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      )
+      onComplete(childId)
+    } catch (err) {
+      console.error(err)
+      toast.error('Failed to save. Please try again.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <h2 className="text-xl font-bold tracking-tight mb-1">Quick setup</h2>
+        <p className="text-sm text-muted-foreground">Just a few details to register your item.</p>
+      </div>
+
+      <div className="space-y-3">
+        <div>
+          <Label htmlFor="lnf-name" className="text-sm font-semibold">
+            Full name <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="lnf-name"
+            value={form.name}
+            onChange={set('name')}
+            placeholder="Enter your full name"
+            className="mt-1.5 h-11 rounded-xl"
+            autoFocus
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="lnf-phone" className="text-sm font-semibold">
+            Phone number <span className="text-destructive">*</span>
+          </Label>
+          <div className="flex mt-1.5">
+            <span className="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-input bg-muted text-sm text-muted-foreground font-medium">
+              +91
+            </span>
+            <Input
+              id="lnf-phone"
+              value={form.phone}
+              onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
+              placeholder="10-digit number"
+              inputMode="numeric"
+              maxLength={10}
+              className="rounded-l-none rounded-r-xl h-11 flex-1"
+            />
+          </div>
+        </div>
+
+        {!hasEmail && (
+          <div>
+            <Label htmlFor="lnf-email" className="text-sm font-semibold">
+              Email <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="lnf-email"
+              type="email"
+              value={form.email}
+              onChange={set('email')}
+              placeholder="your@email.com"
+              className="mt-1.5 h-11 rounded-xl"
+            />
+          </div>
+        )}
+      </div>
+
+      <Button
+        type="submit"
+        disabled={saving}
+        className="w-full h-12 rounded-xl font-semibold press-scale mt-2"
+        style={{ boxShadow: '0 4px 14px hsl(var(--primary) / 0.3)' }}
+      >
+        {saving ? (
+          <span className="flex items-center gap-2">
+            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            Saving...
+          </span>
+        ) : (
+          <span className="flex items-center gap-2">
+            Continue
+            <span className="material-symbols-outlined text-lg">arrow_forward</span>
+          </span>
+        )}
+      </Button>
+    </form>
+  )
+}
+
 function generateUserKey() {
   const array = new Uint8Array(48)
   crypto.getRandomValues(array)
@@ -745,7 +900,7 @@ function StepDone({ activeChildId, onComplete }) {
 }
 
 // ─── Main page ─────────────────────────────────────────────────────────────────
-export function OnboardingPage({ onComplete } = {}) {
+export function OnboardingPage({ onComplete, lnfMode } = {}) {
   const [step, setStep] = useState(1)
   const [flow, setFlow] = useState(null)        // 'self' | 'child'
   const [parentInfo, setParentInfo] = useState(null)
@@ -754,6 +909,39 @@ export function OnboardingPage({ onComplete } = {}) {
   const isDone = step === 'done'
   const totalDots = flow === 'child' ? 4 : 3
   const currentDot = typeof step === 'number' ? step : totalDots + 1
+
+  if (lnfMode && onComplete) {
+    return (
+      <div className="min-h-screen bg-background flex items-start justify-center p-4 pt-8 pb-8 relative overflow-y-auto">
+        <div className="absolute inset-0 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse 80% 60% at 50% -10%, hsl(var(--primary) / 0.12) 0%, transparent 70%)' }} />
+        <div className="w-full max-w-md relative z-10">
+          <div className="text-center mb-6">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+              className="inline-flex items-center justify-center mb-4"
+            >
+              <img src="/logo1.png" alt="WeSafe QR" className="w-14 h-14 rounded-[18px]"
+                style={{ boxShadow: '0 8px 24px hsl(var(--primary) / 0.3)' }} />
+            </motion.div>
+            <h1 className="text-lg font-bold text-foreground">Welcome to WeSafe LNF</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">Set up your account to register your item</p>
+          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15, duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+            className="bg-card rounded-2xl border border-border/60 p-6"
+            style={{ boxShadow: '0 8px 32px hsl(var(--primary) / 0.08)' }}
+          >
+            <StepLNFInfo onComplete={onComplete} />
+          </motion.div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-start justify-center p-4 pt-8 pb-8 relative overflow-y-auto">
