@@ -76,7 +76,15 @@ export function PersonalProfilePage() {
     if (!user || !activeProfileId) return
     setLoading(true)
     getPersonalInfo(user.uid, activeProfileId)
-      .then((data) => setForm((prev) => ({ ...prev, ...data })))
+      .then((data) => {
+        const merged = { ...EMPTY_FORM, ...data }
+        if (!merged.phone && user.phoneNumber) {
+          merged.phone = user.phoneNumber.startsWith('+91')
+            ? user.phoneNumber.slice(3)
+            : user.phoneNumber
+        }
+        setForm(merged)
+      })
       .catch(() => toast.error('Failed to load profile'))
       .finally(() => setLoading(false))
   }, [user, activeProfileId])

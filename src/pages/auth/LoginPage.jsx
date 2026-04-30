@@ -223,11 +223,19 @@ function OTPPanel({ t, onVerified }) {
       return
     }
     setIsSending(true)
+    let timeoutId
     try {
-      await sendOTP(phone)
+      await Promise.race([
+        sendOTP(phone),
+        new Promise((_, reject) => {
+          timeoutId = setTimeout(() => reject(new Error('Request timed out. Please try again.')), 15000)
+        }),
+      ])
+      clearTimeout(timeoutId)
       setOtpSent(true)
       toast.success(`OTP sent to +91 ${phone}`)
     } catch (err) {
+      clearTimeout(timeoutId)
       toast.error(err?.message || 'Failed to send OTP. Try again.')
     } finally {
       setIsSending(false)
@@ -280,7 +288,7 @@ function OTPPanel({ t, onVerified }) {
             transition={{ duration: 0.32, ease: [0.23, 1, 0.32, 1] }}
             className="overflow-hidden"
           >
-            <div className="pt-1 space-y-3">
+            <div className="pt-1 space-y-3 px-1 pb-1">
               <AnimatePresence mode="wait">
                 {!otpSent ? (
                   <motion.div
@@ -824,11 +832,19 @@ function MobilePhoneSection({ t, onVerified }) {
       return
     }
     setIsSending(true)
+    let timeoutId
     try {
-      await sendOTP(phone)
+      await Promise.race([
+        sendOTP(phone),
+        new Promise((_, reject) => {
+          timeoutId = setTimeout(() => reject(new Error('Request timed out. Please try again.')), 15000)
+        }),
+      ])
+      clearTimeout(timeoutId)
       setOtpSent(true)
       toast.success(`OTP sent to +91 ${phone}`)
     } catch (err) {
+      clearTimeout(timeoutId)
       toast.error(err?.message || 'Failed to send OTP. Try again.')
     } finally {
       setIsSending(false)
@@ -869,7 +885,7 @@ function MobilePhoneSection({ t, onVerified }) {
             transition={{ duration: 0.22 }}
             className="space-y-3"
           >
-            <div className="flex gap-2">
+            <div className="flex gap-2 pr-1 overflow-visible">
               <div
                 className="flex items-center justify-center w-16 h-12 rounded-xl border text-sm font-bold flex-shrink-0"
                 style={{

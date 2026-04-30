@@ -16,9 +16,12 @@ const RELATIONSHIPS = ['Parent', 'Spouse', 'Sibling', 'Friend', 'Doctor', 'Other
 function StepLNFInfo({ onComplete }) {
   const { user } = useAuth()
   const hasEmail = !!user?.email
+  const initialPhone = user?.phoneNumber?.startsWith('+91')
+    ? user.phoneNumber.slice(3)
+    : (user?.phoneNumber || '')
   const [form, setForm] = useState({
     name: '',
-    phone: '',
+    phone: initialPhone,
     email: user?.email || '',
   })
   const [saving, setSaving] = useState(false)
@@ -194,7 +197,11 @@ function StepDots({ current, total }) {
 
 // ─── Step 1: Basic Info ────────────────────────────────────────────────────────
 function StepBasicInfo({ onNext }) {
-  const [form, setForm] = useState({ name: '', phone: '', city: '' })
+  const { user } = useAuth()
+  const initialPhone = user?.phoneNumber?.startsWith('+91')
+    ? user.phoneNumber.slice(3)
+    : (user?.phoneNumber || '')
+  const [form, setForm] = useState({ name: '', phone: initialPhone, city: '' })
   const set = (f) => (e) => setForm((p) => ({ ...p, [f]: e.target.value }))
 
   const handleSubmit = (e) => {
