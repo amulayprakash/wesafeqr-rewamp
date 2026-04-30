@@ -208,16 +208,52 @@ function MagneticWrapper({ children }) {
 }
 
 // ─── Desktop OTP panel (collapsible) ─────────────────────────────────────
-function OTPPanel({ t }) {
+function OTPPanel({ t, onVerified }) {
   const [open, setOpen] = useState(false)
   const [phone, setPhone] = useState('')
+  const [otp, setOtp] = useState('')
+  const [otpSent, setOtpSent] = useState(false)
+  const [isSending, setIsSending] = useState(false)
+  const [isVerifying, setIsVerifying] = useState(false)
+  const { sendOTP, verifyOTP } = useAuth()
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!phone || phone.length < 10) {
       toast.error('Enter a valid 10-digit phone number')
       return
     }
-    toast('OTP feature coming soon')
+    setIsSending(true)
+    try {
+      await sendOTP(phone)
+      setOtpSent(true)
+      toast.success(`OTP sent to +91 ${phone}`)
+    } catch (err) {
+      toast.error(err?.message || 'Failed to send OTP. Try again.')
+    } finally {
+      setIsSending(false)
+    }
+  }
+
+  const handleVerify = async () => {
+    if (!otp || otp.length < 6) {
+      toast.error('Enter the 6-digit OTP')
+      return
+    }
+    setIsVerifying(true)
+    try {
+      await verifyOTP(otp)
+      toast.success('Welcome to WeSafe QR')
+      onVerified()
+    } catch (err) {
+      toast.error(err?.code === 'auth/invalid-verification-code' ? 'Invalid OTP. Please try again.' : (err?.message || 'Verification failed.'))
+    } finally {
+      setIsVerifying(false)
+    }
+  }
+
+  const handleResend = () => {
+    setOtpSent(false)
+    setOtp('')
   }
 
   return (
@@ -245,34 +281,97 @@ function OTPPanel({ t }) {
             className="overflow-hidden"
           >
             <div className="pt-1 space-y-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="phone-desk" className="text-sm font-medium">
-                  {t('auth.phone_number')}
-                </Label>
-                <div className="flex gap-2">
-                  <div className="flex items-center justify-center w-16 h-11 rounded-xl border border-input bg-muted text-muted-foreground text-sm font-bold flex-shrink-0">
-                    +91
-                  </div>
-                  <Input
-                    id="phone-desk"
-                    type="tel"
-                    inputMode="numeric"
-                    placeholder="10-digit number"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                    className="flex-1 h-11 rounded-xl"
-                    maxLength={10}
-                  />
-                </div>
-              </div>
-              <Button
-                onClick={handleSend}
-                variant="outline"
-                className="w-full h-11 gap-2 rounded-xl font-semibold press-scale border-border/80 hover:border-primary/40 hover:bg-primary/[0.04] transition-all duration-300"
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>sms</span>
-                {t('auth.send_otp')}
-              </Button>
+              <AnimatePresence mode="wait">
+                {!otpSent ? (
+                  <motion.div
+                    key="phone-step"
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 12 }}
+                    transition={{ duration: 0.22 }}
+                    className="space-y-3"
+                  >
+                    <div className="space-y-1.5">
+                      <Label htmlFor="phone-desk" className="text-sm font-medium">
+                        {t('auth.phone_number')}
+                      </Label>
+                      <div className="flex gap-2">
+                        <div className="flex items-center justify-center w-16 h-11 rounded-xl border border-input bg-muted text-muted-foreground text-sm font-bold flex-shrink-0">
+                          +91
+                        </div>
+                        <Input
+                          id="phone-desk"
+                          type="tel"
+                          inputMode="numeric"
+                          placeholder="10-digit number"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                          className="flex-1 h-11 rounded-xl"
+                          maxLength={10}
+                        />
+                      </div>
+                    </div>
+                    <Button
+                      onClick={handleSend}
+                      disabled={isSending}
+                      variant="outline"
+                      className="w-full h-11 gap-2 rounded-xl font-semibold press-scale border-border/80 hover:border-primary/40 hover:bg-primary/[0.04] transition-all duration-300"
+                    >
+                      {isSending ? (
+                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>sms</span>
+                      )}
+                      {isSending ? 'Sending…' : t('auth.send_otp')}
+                    </Button>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="otp-step"
+                    initial={{ opacity: 0, x: 12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -12 }}
+                    transition={{ duration: 0.22 }}
+                    className="space-y-3"
+                  >
+                    <div className="space-y-1.5">
+                      <Label htmlFor="otp-desk" className="text-sm font-medium">
+                        Enter OTP sent to +91 {phone}
+                      </Label>
+                      <Input
+                        id="otp-desk"
+                        type="tel"
+                        inputMode="numeric"
+                        placeholder="6-digit OTP"
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        className="h-11 rounded-xl text-center text-lg tracking-[0.35em] font-bold"
+                        maxLength={6}
+                        autoFocus
+                      />
+                    </div>
+                    <Button
+                      onClick={handleVerify}
+                      disabled={isVerifying}
+                      className="w-full h-11 gap-2 rounded-xl font-semibold press-scale"
+                    >
+                      {isVerifying ? (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>verified</span>
+                      )}
+                      {isVerifying ? 'Verifying…' : 'Verify OTP'}
+                    </Button>
+                    <button
+                      type="button"
+                      onClick={handleResend}
+                      className="w-full text-xs text-muted-foreground hover:text-primary transition-colors text-center"
+                    >
+                      Didn't receive it? Resend OTP
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </motion.div>
         )}
@@ -296,12 +395,13 @@ export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
 
+  const destination = location.state?.from?.pathname || '/'
+
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
     try {
       await signInWithGoogle()
       toast.success('Welcome to WeSafe QR')
-      const destination = location.state?.from?.pathname || '/'
       navigate(destination, { replace: true })
     } catch (err) {
       toast.error('Sign in failed. Please try again.')
@@ -309,6 +409,10 @@ export function LoginPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handlePhoneVerified = () => {
+    navigate(destination, { replace: true })
   }
 
   // ── Shared Google button ────────────────────────────────────────────────
@@ -358,6 +462,8 @@ export function LoginPage() {
 
   return (
     <div className="min-h-[100dvh] flex flex-col md:flex-row overflow-hidden">
+      {/* Required by Firebase invisible reCAPTCHA for phone auth */}
+      <div id="recaptcha-container" />
 
       {/* ══════════════════════════════════════════════════════════
           MOBILE LAYOUT — clean centered single column
@@ -451,7 +557,7 @@ export function LoginPage() {
             </div>
 
             {/* Phone input — visible by default on mobile */}
-            <MobilePhoneSection t={t} />
+            <MobilePhoneSection t={t} onVerified={handlePhoneVerified} />
           </motion.div>
         </div>
 
@@ -644,7 +750,7 @@ export function LoginPage() {
               <div className="flex-1 h-px bg-border/60" />
             </div>
 
-            <OTPPanel t={t} />
+            <OTPPanel t={t} onVerified={handlePhoneVerified} />
           </motion.div>
 
           <motion.div
@@ -704,51 +810,144 @@ export function LoginPage() {
 }
 
 // ─── Mobile phone section — always visible, no collapse ──────────────────
-function MobilePhoneSection({ t }) {
+function MobilePhoneSection({ t, onVerified }) {
   const [phone, setPhone] = useState('')
+  const [otp, setOtp] = useState('')
+  const [otpSent, setOtpSent] = useState(false)
+  const [isSending, setIsSending] = useState(false)
+  const [isVerifying, setIsVerifying] = useState(false)
+  const { sendOTP, verifyOTP } = useAuth()
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!phone || phone.length < 10) {
       toast.error('Enter a valid 10-digit phone number')
       return
     }
-    toast('OTP feature coming soon')
+    setIsSending(true)
+    try {
+      await sendOTP(phone)
+      setOtpSent(true)
+      toast.success(`OTP sent to +91 ${phone}`)
+    } catch (err) {
+      toast.error(err?.message || 'Failed to send OTP. Try again.')
+    } finally {
+      setIsSending(false)
+    }
+  }
+
+  const handleVerify = async () => {
+    if (!otp || otp.length < 6) {
+      toast.error('Enter the 6-digit OTP')
+      return
+    }
+    setIsVerifying(true)
+    try {
+      await verifyOTP(otp)
+      toast.success('Welcome to WeSafe QR')
+      onVerified()
+    } catch (err) {
+      toast.error(err?.code === 'auth/invalid-verification-code' ? 'Invalid OTP. Please try again.' : (err?.message || 'Verification failed.'))
+    } finally {
+      setIsVerifying(false)
+    }
+  }
+
+  const handleResend = () => {
+    setOtpSent(false)
+    setOtp('')
   }
 
   return (
     <div className="space-y-3">
-      {/* Phone input row */}
-      <div className="flex gap-2">
-        <div
-          className="flex items-center justify-center w-16 h-12 rounded-xl border text-sm font-bold flex-shrink-0"
-          style={{
-            borderColor: 'hsl(var(--border))',
-            background: 'hsl(var(--muted))',
-            color: 'hsl(var(--muted-foreground))',
-          }}
-        >
-          +91
-        </div>
-        <Input
-          id="phone-mobile"
-          type="tel"
-          inputMode="numeric"
-          placeholder={t('auth.phone_placeholder')}
-          value={phone}
-          onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-          className="flex-1 h-12 rounded-xl text-[15px]"
-          maxLength={10}
-        />
-      </div>
-
-      {/* Get OTP button */}
-      <Button
-        onClick={handleSend}
-        variant="outline"
-        className="w-full h-12 gap-2 rounded-xl font-semibold text-[15px] border-border/80 hover:border-primary/40 hover:bg-primary/[0.04] transition-all duration-300 active:scale-[0.98]"
-      >
-        {t('auth.get_otp')}
-      </Button>
+      <AnimatePresence mode="wait">
+        {!otpSent ? (
+          <motion.div
+            key="phone-step-mobile"
+            initial={{ opacity: 0, x: -12 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 12 }}
+            transition={{ duration: 0.22 }}
+            className="space-y-3"
+          >
+            <div className="flex gap-2">
+              <div
+                className="flex items-center justify-center w-16 h-12 rounded-xl border text-sm font-bold flex-shrink-0"
+                style={{
+                  borderColor: 'hsl(var(--border))',
+                  background: 'hsl(var(--muted))',
+                  color: 'hsl(var(--muted-foreground))',
+                }}
+              >
+                +91
+              </div>
+              <Input
+                id="phone-mobile"
+                type="tel"
+                inputMode="numeric"
+                placeholder={t('auth.phone_placeholder')}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                className="flex-1 h-12 rounded-xl text-[15px]"
+                maxLength={10}
+              />
+            </div>
+            <Button
+              onClick={handleSend}
+              disabled={isSending}
+              variant="outline"
+              className="w-full h-12 gap-2 rounded-xl font-semibold text-[15px] border-border/80 hover:border-primary/40 hover:bg-primary/[0.04] transition-all duration-300 active:scale-[0.98]"
+            >
+              {isSending ? (
+                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : null}
+              {isSending ? 'Sending…' : t('auth.get_otp')}
+            </Button>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="otp-step-mobile"
+            initial={{ opacity: 0, x: 12 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -12 }}
+            transition={{ duration: 0.22 }}
+            className="space-y-3"
+          >
+            <div className="space-y-1.5">
+              <p className="text-[13px] text-muted-foreground font-medium">
+                OTP sent to <span className="text-foreground font-semibold">+91 {phone}</span>
+              </p>
+              <Input
+                id="otp-mobile"
+                type="tel"
+                inputMode="numeric"
+                placeholder="6-digit OTP"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                className="h-12 rounded-xl text-center text-xl tracking-[0.4em] font-bold"
+                maxLength={6}
+                autoFocus
+              />
+            </div>
+            <Button
+              onClick={handleVerify}
+              disabled={isVerifying}
+              className="w-full h-12 gap-2 rounded-xl font-semibold text-[15px] active:scale-[0.98]"
+            >
+              {isVerifying ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : null}
+              {isVerifying ? 'Verifying…' : 'Verify OTP'}
+            </Button>
+            <button
+              type="button"
+              onClick={handleResend}
+              className="w-full text-[13px] text-muted-foreground hover:text-primary transition-colors text-center"
+            >
+              Didn't receive it? Resend OTP
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
