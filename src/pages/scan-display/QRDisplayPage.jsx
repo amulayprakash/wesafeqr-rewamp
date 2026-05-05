@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { getQRCode, recordScan, logScanToQRCodeScans } from '@/services/qrService'
+import { sendEmergencyQRAlerts } from '@/services/whatsappService'
 import { getPersonalInfo, getEmergencyContacts, getMedicalItems, getInsurance } from '@/services/profileService'
 import { createAlert } from '@/services/alertService'
 import { SUPPORTED_LANGUAGES } from '@/i18n'
@@ -942,6 +943,7 @@ export function QRDisplayPage() {
   const [locationSource, setLocationSource] = useState(null) // 'gps' | 'ip' | null
   const [activeTab, setActiveTab] = useState('critical')
   const scanMetaRef = useRef({ latitude: null, longitude: null, ipAddress: '', permissionGiven: false })
+  const whatsappSentRef = useRef(false)
 
   // ── Location: GPS first, IP fallback ─────────────────────────────────────
 
@@ -968,6 +970,7 @@ export function QRDisplayPage() {
             .then(r => r.json())
             .then(d => {
               if (d.latitude && d.longitude) {
+                scanMetaRef.current = { ...scanMetaRef.current, latitude: d.latitude, longitude: d.longitude }
                 setMapCoords({ lat: d.latitude, lng: d.longitude, city: d.city, region: d.region })
                 setLocationSource('ip')
               }
@@ -982,6 +985,7 @@ export function QRDisplayPage() {
         .then(r => r.json())
         .then(d => {
           if (d.latitude && d.longitude) {
+            scanMetaRef.current = { ...scanMetaRef.current, latitude: d.latitude, longitude: d.longitude }
             setMapCoords({ lat: d.latitude, lng: d.longitude, city: d.city, region: d.region })
             setLocationSource('ip')
           }
@@ -1059,6 +1063,22 @@ export function QRDisplayPage() {
     }, 3000)
     return () => clearTimeout(timer)
   }, [qr, uid, passcode, personalInfo])
+
+  // ── WhatsApp emergency alerts ─────────────────────────────────────────────
+
+  useEffect(() => {
+    if (whatsappSentRef.current) return
+    if (!qr || !uid || loadingContacts || !contacts.length) return
+    whatsappSentRef.current = true
+    // 5-second delay gives GPS (8s timeout) or IP fallback time to resolve coords
+    const timer = setTimeout(() => {
+      const profileName = personalInfo?.name || qr.name || 'Unknown'
+      const lat = scanMetaRef.current.latitude
+      const lng = scanMetaRef.current.longitude
+      sendEmergencyQRAlerts(contacts, profileName, lat, lng).catch(() => {})
+    }, 5000)
+    return () => clearTimeout(timer)
+  }, [qr, uid, contacts, loadingContacts])
 
   // ── Guard states ──────────────────────────────────────────────────────────
 
