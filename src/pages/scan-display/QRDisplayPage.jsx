@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { getQRCode, recordScan, logScanToQRCodeScans } from '@/services/qrService'
 import { sendEmergencyQRAlerts } from '@/services/whatsappService'
+import { createAndSendOTP, verifyOTPCode } from '@/services/otpService'
+import OTPUnlockSection from '@/components/scan/OTPUnlockSection'
 import { getPersonalInfo, getEmergencyContacts, getMedicalItems, getInsurance } from '@/services/profileService'
 import { createAlert } from '@/services/alertService'
 import { SUPPORTED_LANGUAGES } from '@/i18n'
@@ -942,6 +944,11 @@ export function QRDisplayPage() {
   const [mapCoords, setMapCoords] = useState(null)
   const [locationSource, setLocationSource] = useState(null) // 'gps' | 'ip' | null
   const [activeTab, setActiveTab] = useState('critical')
+  const [otpUnlocked, setOtpUnlocked] = useState(false)
+  const [requestId, setRequestId] = useState(null)
+  const [otpState, setOtpState] = useState('idle')
+  const [otpError, setOtpError] = useState('')
+  const [primaryContact, setPrimaryContact] = useState(null)
   const scanMetaRef = useRef({ latitude: null, longitude: null, ipAddress: '', permissionGiven: false })
   const whatsappSentRef = useRef(false)
 
@@ -1005,6 +1012,7 @@ export function QRDisplayPage() {
   const uid = qr?.uid
   const childId = qr?.childId
   const enabled = !!uid && !!childId
+  const medEnabled = enabled && otpUnlocked
 
   const { data: personalInfo = {}, isLoading: loadingInfo } = useQuery({
     queryKey: ['qr-personal', uid, childId], queryFn: () => getPersonalInfo(uid, childId), enabled, staleTime: 60_000,
@@ -1013,29 +1021,79 @@ export function QRDisplayPage() {
     queryKey: ['qr-contacts', uid, childId], queryFn: () => getEmergencyContacts(uid, childId), enabled, staleTime: 60_000,
   })
   const { data: conditionsA = [] } = useQuery({
-    queryKey: ['qr-cond-a', uid, childId], queryFn: () => getMedicalItems(uid, childId, 'mediccond'), enabled, staleTime: 60_000,
+    queryKey: ['qr-cond-a', uid, childId], queryFn: () => getMedicalItems(uid, childId, 'mediccond'), enabled: medEnabled, staleTime: 60_000,
   })
   const { data: conditionsB = [] } = useQuery({
-    queryKey: ['qr-cond-b', uid, childId], queryFn: () => getMedicalItems(uid, childId, 'mediccona'), enabled, staleTime: 60_000,
+    queryKey: ['qr-cond-b', uid, childId], queryFn: () => getMedicalItems(uid, childId, 'mediccona'), enabled: medEnabled, staleTime: 60_000,
   })
   const { data: allergies = [] } = useQuery({
-    queryKey: ['qr-allergies', uid, childId], queryFn: () => getMedicalItems(uid, childId, 'allergies'), enabled, staleTime: 60_000,
+    queryKey: ['qr-allergies', uid, childId], queryFn: () => getMedicalItems(uid, childId, 'allergies'), enabled: medEnabled, staleTime: 60_000,
   })
   const { data: medications = [] } = useQuery({
-    queryKey: ['qr-medications', uid, childId], queryFn: () => getMedicalItems(uid, childId, 'medications'), enabled, staleTime: 60_000,
+    queryKey: ['qr-medications', uid, childId], queryFn: () => getMedicalItems(uid, childId, 'medications'), enabled: medEnabled, staleTime: 60_000,
   })
   const { data: procedures = [] } = useQuery({
-    queryKey: ['qr-procedures', uid, childId], queryFn: () => getMedicalItems(uid, childId, 'procedures'), enabled, staleTime: 60_000,
+    queryKey: ['qr-procedures', uid, childId], queryFn: () => getMedicalItems(uid, childId, 'procedures'), enabled: medEnabled, staleTime: 60_000,
   })
   const { data: vaccinations = [] } = useQuery({
-    queryKey: ['qr-vaccinations', uid, childId], queryFn: () => getMedicalItems(uid, childId, 'vaccinations'), enabled, staleTime: 60_000,
+    queryKey: ['qr-vaccinations', uid, childId], queryFn: () => getMedicalItems(uid, childId, 'vaccinations'), enabled: medEnabled, staleTime: 60_000,
   })
   const { data: insurance = {} } = useQuery({
-    queryKey: ['qr-insurance', uid, childId], queryFn: () => getInsurance(uid, childId), enabled, staleTime: 60_000,
+    queryKey: ['qr-insurance', uid, childId], queryFn: () => getInsurance(uid, childId), enabled: medEnabled, staleTime: 60_000,
   })
 
   const conditions = [...conditionsA, ...conditionsB]
   const isLoading = loadingQR || (enabled && (loadingInfo || loadingContacts))
+
+  // ── OTP unlock handlers ───────────────────────────────────────────────────
+
+  async function handleRequestOTP() {
+    const contact = contacts[0]
+    const phone = contact?.phone || contact?.['Emergency Contact Number']
+    if (!contact || !phone) { setOtpState('error'); setOtpError('no_contact'); return }
+    setOtpState('sending')
+    const contactName = contact.name || contact['Emergency Contact Name'] || ''
+    // Always set contact info so call/WhatsApp buttons are available even on failure
+    setPrimaryContact({
+      name: contactName,
+      maskedPhone: maskPhone(phone),
+      rawPhone: phone,
+    })
+    try {
+      const { requestId: rid, waSent } = await createAndSendOTP({
+        passcode, uid, childId,
+        contactPhone: phone,
+        contactName,
+        profileName: personalInfo?.name || qr?.name || 'the profile holder',
+      })
+      setRequestId(rid)
+      setOtpState(waSent ? 'sent' : 'sent_wa_failed')
+    } catch (err) {
+      console.error('[OTP] createAndSendOTP error:', err)
+      setOtpState('error')
+      setOtpError(err.message === 'firestore_denied' ? 'firestore_denied' : 'send_failed')
+    }
+  }
+
+  async function handleVerifyOTP(digits) {
+    if (!requestId) return
+    setOtpState('verifying')
+    try {
+      await verifyOTPCode(requestId, digits)
+      setOtpUnlocked(true)
+      setOtpState('idle')
+    } catch (err) {
+      setOtpState('error')
+      setOtpError(err.message || 'Invalid OTP')
+    }
+  }
+
+  function handleRetryOTP() {
+    setOtpState('idle')
+    setOtpError('')
+    setRequestId(null)
+    setPrimaryContact(null)
+  }
 
   // ── Scan logging ──────────────────────────────────────────────────────────
 
@@ -1304,36 +1362,46 @@ export function QRDisplayPage() {
           </Reveal>
         )}
 
-        {/* Tab bar */}
+        {/* Medical info — gated behind OTP */}
         <Reveal delay={0.15}>
-          <TabBar active={activeTab} onChange={setActiveTab} criticalCount={criticalCount} />
-        </Reveal>
-
-        {/* Tab content */}
-        <Reveal delay={0.15}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
-            >
-              {activeTab === 'critical' && (
-                <CriticalTab allergies={allergies} conditions={conditions} isLoading={isLoading} />
-              )}
-              {activeTab === 'medical' && (
-                <MedicalTab medications={medications} procedures={procedures} vaccinations={vaccinations} isLoading={isLoading} />
-              )}
-              {activeTab === 'info' && (
-                <InfoTab
-                  bloodGroup={bloodGroup} bgStyle={bgStyle}
-                  medNotes={medNotes} insurance={insurance}
-                  hasInsurance={hasInsurance} isLoading={isLoading}
-                />
-              )}
-            </motion.div>
-          </AnimatePresence>
+          {otpUnlocked ? (
+            <>
+              <TabBar active={activeTab} onChange={setActiveTab} criticalCount={criticalCount} />
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                >
+                  {activeTab === 'critical' && (
+                    <CriticalTab allergies={allergies} conditions={conditions} isLoading={isLoading} />
+                  )}
+                  {activeTab === 'medical' && (
+                    <MedicalTab medications={medications} procedures={procedures} vaccinations={vaccinations} isLoading={isLoading} />
+                  )}
+                  {activeTab === 'info' && (
+                    <InfoTab
+                      bloodGroup={bloodGroup} bgStyle={bgStyle}
+                      medNotes={medNotes} insurance={insurance}
+                      hasInsurance={hasInsurance} isLoading={isLoading}
+                    />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </>
+          ) : (
+            <OTPUnlockSection
+              otpState={otpState}
+              otpError={otpError}
+              primaryContact={primaryContact}
+              contacts={contacts}
+              onRequestOTP={handleRequestOTP}
+              onVerifyOTP={handleVerifyOTP}
+              onRetry={handleRetryOTP}
+            />
+          )}
         </Reveal>
 
         {/* Footer */}

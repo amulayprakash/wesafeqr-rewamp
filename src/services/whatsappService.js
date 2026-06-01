@@ -41,6 +41,18 @@ async function sendWhatsApp(phone, message) {
   await fetch(url)
 }
 
+export async function sendOTPWhatsApp(contactPhone, otp, profileName, contactName) {
+  const message =
+    `🔐 *WeSafe Medical Access OTP*\n\n` +
+    `Hello ${contactName || 'there'},\n\n` +
+    `Someone has scanned *${profileName}*'s WeSafe emergency QR and is requesting access to their medical information.\n\n` +
+    `*Your OTP is: ${otp}*\n\n` +
+    `This OTP expires in *10 minutes* and can only be used once.\n` +
+    `Only share this with someone you trust who has scanned ${profileName}'s QR.\n\n` +
+    `_WeSafe — Protecting lives through smart emergency info_`
+  await sendWhatsApp(contactPhone, message)
+}
+
 export async function sendEmergencyQRAlerts(contacts, profileName, lat, lng) {
   if (!contacts?.length) return
   const message = buildMessage(profileName, lat, lng)
