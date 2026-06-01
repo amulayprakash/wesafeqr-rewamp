@@ -41,16 +41,33 @@ async function sendWhatsApp(phone, message) {
   await fetch(url)
 }
 
-export async function sendOTPWhatsApp(contactPhone, otp, profileName, contactName) {
-  const message =
-    `🔐 *WeSafe Medical Access OTP*\n\n` +
-    `Hello ${contactName || 'there'},\n\n` +
-    `Someone has scanned *${profileName}*'s WeSafe emergency QR and is requesting access to their medical information.\n\n` +
-    `*Your OTP is: ${otp}*\n\n` +
-    `This OTP expires in *10 minutes* and can only be used once.\n` +
-    `Only share this with someone you trust who has scanned ${profileName}'s QR.\n\n` +
-    `_WeSafe — Protecting lives through smart emergency info_`
-  await sendWhatsApp(contactPhone, message)
+export async function sendOTPToAllContacts(contacts, otp, profileName) {
+  if (!contacts?.length) return
+
+  // Format OTP digits with spaces for easy reading (e.g. 847291 → 8 4 7 2 9 1)
+  const otpSpaced = otp.split('').join(' ')
+
+  const sends = contacts.map(c => {
+    const phone = c.phone || c['Emergency Contact Number']
+    const name = c.name || c['Emergency Contact Name'] || 'there'
+    if (!phone) return Promise.resolve()
+
+    const message =
+      `🔐 *Medical Access OTP — WeSafe*\n\n` +
+      `Hello ${name},\n\n` +
+      `Someone is requesting access to *${profileName}*'s medical information.\n\n` +
+      `━━━━━━━━━━━━━━━━\n` +
+      `🔑 *Your OTP Code:*\n\n` +
+      `*${otpSpaced}*\n` +
+      `━━━━━━━━━━━━━━━━\n\n` +
+      `Share this 6-digit code *only* with the person you trust who has scanned the QR.\n\n` +
+      `⏱ Valid for *10 minutes* • One-time use only\n\n` +
+      `_WeSafe — Protecting lives through smart emergency info_`
+
+    return sendWhatsApp(phone, message).catch(() => {})
+  })
+
+  await Promise.allSettled(sends)
 }
 
 export async function sendEmergencyQRAlerts(contacts, profileName, lat, lng) {

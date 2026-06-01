@@ -1,6 +1,6 @@
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore'
 import { db } from '@/config/firebase'
-import { sendOTPWhatsApp } from './whatsappService'
+import { sendOTPToAllContacts } from './whatsappService'
 
 async function hashOTP(otp) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(otp))
@@ -27,7 +27,7 @@ function generateUUID() {
   })
 }
 
-export async function createAndSendOTP({ passcode, uid, childId, contactPhone, contactName, profileName }) {
+export async function createAndSendOTP({ passcode, uid, childId, contacts, profileName }) {
   const otp = generateOTP()
   const hashedOTP = await hashOTP(otp)
   const requestId = generateUUID()
@@ -47,11 +47,11 @@ export async function createAndSendOTP({ passcode, uid, childId, contactPhone, c
     throw new Error('firestore_denied')
   }
 
-  const waSent = await sendOTPWhatsApp(contactPhone, otp, profileName, contactName)
+  const waSent = await sendOTPToAllContacts(contacts, otp, profileName)
     .then(() => true)
     .catch(err => { console.error('[OTP] WhatsApp send failed:', err); return false })
 
-  return { requestId, maskedPhone: maskPhone(contactPhone), waSent }
+  return { requestId, waSent }
 }
 
 export async function verifyOTPCode(requestId, inputOTP) {

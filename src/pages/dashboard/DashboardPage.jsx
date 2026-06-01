@@ -91,6 +91,73 @@ function StatSkeleton() {
   return <span className="inline-block w-10 h-8 bg-muted animate-pulse rounded-lg align-middle" />
 }
 
+function Shimmer({ className }) {
+  return <div className={`bg-muted animate-pulse rounded-xl ${className}`} />
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Mobile skeleton */}
+      <div className="lg:hidden px-4 py-5 space-y-5">
+        {/* Hero */}
+        <div className="rounded-2xl p-5 bg-muted/40 animate-pulse">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-13 h-13 rounded-full bg-muted/60" style={{ width: 52, height: 52 }} />
+            <div className="flex-1 space-y-2">
+              <Shimmer className="h-3 w-20 rounded-full" />
+              <Shimmer className="h-5 w-36 rounded-full" />
+              <Shimmer className="h-2.5 w-24 rounded-full" />
+            </div>
+          </div>
+          <div className="flex pt-4 border-t border-white/10">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                <Shimmer className="h-6 w-10 rounded-lg" />
+                <Shimmer className="h-2 w-12 rounded-full" />
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Stat tiles */}
+        <div className="grid grid-cols-3 gap-3">
+          {[1, 2, 3].map((i) => <Shimmer key={i} className="h-28 rounded-2xl" />)}
+        </div>
+        {/* Quick links */}
+        <div className="grid grid-cols-2 gap-3">
+          {[1, 2, 3, 4].map((i) => <Shimmer key={i} className="h-32 rounded-2xl" />)}
+        </div>
+        {/* Health card */}
+        <Shimmer className="h-52 rounded-2xl" />
+      </div>
+
+      {/* Desktop skeleton */}
+      <div className="hidden lg:block max-w-7xl mx-auto px-8 py-8">
+        {/* Hero */}
+        <Shimmer className="h-44 rounded-3xl mb-8" />
+        <div className="grid grid-cols-3 gap-7">
+          <div className="col-span-2 space-y-7">
+            <div className="grid grid-cols-3 gap-4">
+              {[1, 2, 3].map((i) => <Shimmer key={i} className="h-40 rounded-2xl" />)}
+            </div>
+            <div className="grid grid-cols-4 gap-4">
+              {[1, 2, 3, 4].map((i) => <Shimmer key={i} className="h-36 rounded-2xl" />)}
+            </div>
+            <div className="grid grid-cols-5 gap-3">
+              {[1, 2, 3, 4, 5].map((i) => <Shimmer key={i} className="h-32 rounded-2xl" />)}
+            </div>
+            <Shimmer className="h-40 rounded-2xl" />
+          </div>
+          <div className="col-span-1 space-y-5">
+            <Shimmer className="h-64 rounded-2xl" />
+            <Shimmer className="h-36 rounded-2xl" />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const PROFILE_FIELDS = ['name', 'dob', 'gender', 'bloodGroup', 'height', 'weight', 'phone', 'address']
 function calcCompletion(data) {
   if (!data) return 0
@@ -184,6 +251,8 @@ export function DashboardPage() {
     select: (scans) => scans.slice(0, 3),
   })
 
+  const primaryLoading = loadingPersonal || loadingQR || loadingContacts
+
   const activeQRCount  = qrCodes.filter((q) => q.status === 'active').length
   const totalQRCount   = qrCodes.length
   const contactCount   = contacts.length
@@ -207,6 +276,8 @@ export function DashboardPage() {
   // ── Score color ──────────────────────────────────────────────────────────────
   const overallScore = useMemo(() => Math.round((profilePct + contactPct + medicalPct) / 3), [profilePct, contactPct, medicalPct])
   const scoreColor = useMemo(() => overallScore >= 70 ? BRAND.emerald : overallScore >= 35 ? BRAND.amber : BRAND.rose, [overallScore])
+
+  if (primaryLoading) return <DashboardSkeleton />
 
   return (
     <div className="min-h-screen bg-background">

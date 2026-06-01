@@ -1048,22 +1048,23 @@ export function QRDisplayPage() {
   // ── OTP unlock handlers ───────────────────────────────────────────────────
 
   async function handleRequestOTP() {
-    const contact = contacts[0]
-    const phone = contact?.phone || contact?.['Emergency Contact Number']
-    if (!contact || !phone) { setOtpState('error'); setOtpError('no_contact'); return }
+    if (!contacts?.length) { setOtpState('error'); setOtpError('no_contact'); return }
+    const primary = contacts[0]
+    const primaryPhone = primary?.phone || primary?.['Emergency Contact Number']
+    if (!primaryPhone) { setOtpState('error'); setOtpError('no_contact'); return }
+
     setOtpState('sending')
-    const contactName = contact.name || contact['Emergency Contact Name'] || ''
-    // Always set contact info so call/WhatsApp buttons are available even on failure
+    // Set primary contact for the call/WhatsApp buttons on the unlock screen
     setPrimaryContact({
-      name: contactName,
-      maskedPhone: maskPhone(phone),
-      rawPhone: phone,
+      name: primary.name || primary['Emergency Contact Name'] || '',
+      maskedPhone: maskPhone(primaryPhone),
+      rawPhone: primaryPhone,
     })
+
     try {
       const { requestId: rid, waSent } = await createAndSendOTP({
         passcode, uid, childId,
-        contactPhone: phone,
-        contactName,
+        contacts,
         profileName: personalInfo?.name || qr?.name || 'the profile holder',
       })
       setRequestId(rid)
