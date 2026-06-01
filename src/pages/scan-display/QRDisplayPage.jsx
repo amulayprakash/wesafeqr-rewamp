@@ -1323,11 +1323,6 @@ export function QRDisplayPage() {
                               {relation}
                             </span>
                           )}
-                          {idx === 0 && (
-                            <span className="text-[10px] font-bold bg-destructive/10 text-destructive rounded px-1.5 py-0.5 uppercase tracking-wide flex-shrink-0">
-                              {t('qrd.primary')}
-                            </span>
-                          )}
                         </div>
                         {/* Masked number */}
                         <p className="text-[12px] font-mono font-semibold text-muted-foreground mt-0.5 tabular-nums tracking-wider">

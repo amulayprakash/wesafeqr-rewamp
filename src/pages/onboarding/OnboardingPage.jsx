@@ -447,6 +447,13 @@ function StepSelfEC({ selfId, onBack, onNext }) {
         <p className="text-sm text-muted-foreground">Who should be called if you're in an emergency?</p>
       </div>
 
+      <div className="flex items-start gap-2.5 px-3.5 py-3 rounded-xl bg-amber-50 border border-amber-200 dark:bg-amber-950/30 dark:border-amber-800/50">
+        <span className="material-symbols-outlined text-amber-500 dark:text-amber-400 flex-shrink-0 mt-0.5" style={{ fontSize: '17px' }}>lock_open</span>
+        <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+          In an emergency, this contact will receive a one-time OTP via WhatsApp to unlock your medical information.
+        </p>
+      </div>
+
       <div className="space-y-3">
         <div>
           <Label htmlFor="ecName" className="text-sm font-semibold">
@@ -728,6 +735,13 @@ function StepChildEC({ childId, parentInfo, onBack, onNext }) {
       <div>
         <h2 className="text-xl font-bold tracking-tight mb-1">Emergency contact</h2>
         <p className="text-sm text-muted-foreground">Who should be called if they're in danger?</p>
+      </div>
+
+      <div className="flex items-start gap-2.5 px-3.5 py-3 rounded-xl bg-amber-50 border border-amber-200 dark:bg-amber-950/30 dark:border-amber-800/50">
+        <span className="material-symbols-outlined text-amber-500 dark:text-amber-400 flex-shrink-0 mt-0.5" style={{ fontSize: '17px' }}>lock_open</span>
+        <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+          In an emergency, this contact will receive a one-time OTP via WhatsApp to unlock this profile's medical information.
+        </p>
       </div>
 
       {/* Toggle */}

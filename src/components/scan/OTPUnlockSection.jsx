@@ -195,18 +195,30 @@ export default function OTPUnlockSection({
         )}
 
         <div className="p-4 space-y-4">
-          {/* Contact pill */}
-          <div className="flex items-center gap-2 bg-muted/50 rounded-xl px-3 py-2.5">
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <span className="material-symbols-outlined filled text-primary text-[16px]">person</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-semibold text-foreground truncate">
-                {primaryContact?.name || 'Emergency Contact'}
-              </p>
-              <p className="text-xs text-muted-foreground font-mono">{primaryContact?.maskedPhone}</p>
-            </div>
-            <span className="text-[11px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">OTP Sent</span>
+          {/* All contacts that received the OTP */}
+          <div className="space-y-2">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">OTP delivered to</p>
+            {(contacts && contacts.length > 0 ? contacts : [primaryContact]).map((c, idx) => {
+              const name = c?.name || c?.['Emergency Contact Name'] || (idx === 0 ? primaryContact?.name : null) || 'Emergency Contact'
+              const phone = c?.phone || c?.['Emergency Contact Number'] || (idx === 0 ? primaryContact?.rawPhone : '')
+              const masked = phone ? ('••••••' + String(phone).slice(-4)) : primaryContact?.maskedPhone
+              const initial = name ? name.charAt(0).toUpperCase() : '?'
+              return (
+                <div key={idx} className="flex items-center gap-2.5 bg-muted/50 rounded-xl px-3 py-2.5">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 font-bold text-sm text-primary">
+                    {initial}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-semibold text-foreground truncate">{name}</p>
+                    <p className="text-xs text-muted-foreground font-mono">{masked}</p>
+                  </div>
+                  <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1 flex-shrink-0">
+                    <span className="material-symbols-outlined filled text-[11px]">check_circle</span>
+                    Sent
+                  </span>
+                </div>
+              )
+            })}
           </div>
 
           {/* Call + WhatsApp buttons */}

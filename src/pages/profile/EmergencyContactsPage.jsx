@@ -329,6 +329,14 @@ export function EmergencyContactsPage() {
         {/* Coverage banner — always visible */}
         {!loading && <CoverageBanner count={contacts.length} />}
 
+        {/* OTP info banner */}
+        <div className="flex items-start gap-2.5 px-3.5 py-3 rounded-xl bg-amber-50 border border-amber-200 dark:bg-amber-950/30 dark:border-amber-800/50">
+          <span className="material-symbols-outlined text-amber-500 dark:text-amber-400 flex-shrink-0 mt-0.5" style={{ fontSize: '17px' }}>lock_open</span>
+          <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+            These contacts will receive a one-time OTP via WhatsApp to unlock your medical information when your QR is scanned in an emergency.
+          </p>
+        </div>
+
         {/* Contact list or empty state */}
         {loading ? (
           <div className="space-y-3">
@@ -408,6 +416,14 @@ export function EmergencyContactsPage() {
               Add contact
             </Button>
           </motion.div>
+
+          {/* OTP info banner */}
+          <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 dark:bg-amber-950/30 dark:border-amber-800/50 mb-6">
+            <span className="material-symbols-outlined text-amber-500 dark:text-amber-400 flex-shrink-0 mt-0.5" style={{ fontSize: '17px' }}>lock_open</span>
+            <p className="text-sm text-amber-800 dark:text-amber-300 leading-relaxed">
+              These contacts will receive a one-time OTP via WhatsApp to unlock your medical information when your QR is scanned in an emergency.
+            </p>
+          </div>
 
           <div className="grid grid-cols-3 gap-7 items-start">
             {/* Left: contact list */}
@@ -521,6 +537,12 @@ export function EmergencyContactsPage() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-amber-50 border border-amber-200 dark:bg-amber-950/30 dark:border-amber-800/50">
+              <span className="material-symbols-outlined text-amber-500 dark:text-amber-400 flex-shrink-0 mt-0.5" style={{ fontSize: '16px' }}>lock_open</span>
+              <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+                This contact will receive an OTP via WhatsApp to unlock medical information in an emergency.
+              </p>
             </div>
             <div className="flex gap-3 pt-1">
               <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setShowDialog(false)}>
