@@ -253,7 +253,7 @@ export function DashboardPage() {
 
   const primaryLoading = loadingPersonal || loadingQR || loadingContacts
 
-  const activeQRCount  = qrCodes.filter((q) => q.status === 'active').length
+  const activeQRCount  = qrCodes.filter((q) => q.status === 'active' || q.Consumed === true || q.consumed === true).length
   const totalQRCount   = qrCodes.length
   const contactCount   = contacts.length
   const profilePct     = calcCompletion(personalInfo)

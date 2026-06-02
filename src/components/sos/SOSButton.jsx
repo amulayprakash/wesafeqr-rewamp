@@ -37,7 +37,7 @@ export function SOSButton() {
 
   // phases: 'idle' | 'countdown' | 'sending' | 'sent' | 'error'
   const [phase, setPhase] = useState('idle')
-  const [timeLeft, setTimeLeft] = useState(60)
+  const [timeLeft, setTimeLeft] = useState(15)
   const [showDialog, setShowDialog] = useState(false)
 
   const isCountingDown = phase === 'countdown'
@@ -64,7 +64,7 @@ export function SOSButton() {
 
       if (!contacts?.length) {
         setPhase('error')
-        setTimeout(() => { setPhase('idle'); setTimeLeft(60) }, 2500)
+        setTimeout(() => { setPhase('idle'); setTimeLeft(15) }, 2500)
         return
       }
 
@@ -78,10 +78,10 @@ export function SOSButton() {
       }).catch(() => {})
 
       setPhase('sent')
-      setTimeout(() => { setPhase('idle'); setTimeLeft(60); setShowDialog(false) }, 3000)
+      setTimeout(() => { setPhase('idle'); setTimeLeft(15); setShowDialog(false) }, 3000)
     } catch {
       setPhase('error')
-      setTimeout(() => { setPhase('idle'); setTimeLeft(60) }, 2500)
+      setTimeout(() => { setPhase('idle'); setTimeLeft(15) }, 2500)
     }
   }, [user, activeProfileId, activeProfile])
 
@@ -92,13 +92,13 @@ export function SOSButton() {
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleTrigger = () => {
     setPhase('countdown')
-    setTimeLeft(60)
+    setTimeLeft(15)
     setShowDialog(true)
   }
 
   const handleCancel = () => {
     setPhase('idle')
-    setTimeLeft(60)
+    setTimeLeft(15)
     setShowDialog(false)
   }
 
