@@ -112,7 +112,7 @@ export function SOSButton() {
   return (
     <>
       {/* ── Floating button ──────────────────────────────────────────────── */}
-      <div className="fixed z-40 right-4 bottom-[5.5rem] lg:bottom-8 lg:right-8 flex flex-col items-center gap-1.5">
+      <div className="fixed z-40 right-4 bottom-[7rem] lg:bottom-8 lg:right-8 flex flex-col items-center gap-1.5">
 
         {/* Countdown badge — shown when modal is dismissed but timer still running */}
         <AnimatePresence>
