@@ -32,7 +32,7 @@ export default function OTPUnlockSection({
   onVerifyOTP,
   onRetry,
 }) {
-  const [digits, setDigits] = useState(['', '', '', '', '', ''])
+  const [digits, setDigits] = useState(['', '', '', ''])
   const [secondsLeft, setSecondsLeft] = useState(600)
   const inputRefs = useRef([])
 
@@ -54,7 +54,7 @@ export default function OTPUnlockSection({
 
   // Reset digits when retrying
   useEffect(() => {
-    if (otpState === 'idle') setDigits(['', '', '', '', '', ''])
+    if (otpState === 'idle') setDigits(['', '', '', ''])
   }, [otpState])
 
   const mm = String(Math.floor(secondsLeft / 60)).padStart(2, '0')
@@ -67,7 +67,7 @@ export default function OTPUnlockSection({
     const next = [...digits]
     next[i] = val
     setDigits(next)
-    if (val && i < 5) inputRefs.current[i + 1]?.focus()
+    if (val && i < 3) inputRefs.current[i + 1]?.focus()
   }
 
   function handleKeyDown(i, e) {
@@ -78,11 +78,11 @@ export default function OTPUnlockSection({
 
   function handlePaste(e) {
     e.preventDefault()
-    const text = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+    const text = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 4)
     const next = [...digits]
-    text.split('').forEach((ch, idx) => { if (idx < 6) next[idx] = ch })
+    text.split('').forEach((ch, idx) => { if (idx < 4) next[idx] = ch })
     setDigits(next)
-    inputRefs.current[Math.min(text.length, 5)]?.focus()
+    inputRefs.current[Math.min(text.length, 3)]?.focus()
   }
 
   const noContacts = !contacts || contacts.length === 0
@@ -246,7 +246,7 @@ export default function OTPUnlockSection({
 
           {/* Instruction */}
           <p className="text-[13px] text-muted-foreground text-center leading-snug">
-            Ask them for the <span className="font-semibold text-foreground">6-digit OTP</span> and enter it below
+            Ask them for the <span className="font-semibold text-foreground">4-digit OTP</span> and enter it below
           </p>
 
           {/* OTP boxes */}
@@ -323,9 +323,9 @@ export default function OTPUnlockSection({
         </div>
 
         <div className="space-y-1.5">
-          <p className="font-bold text-foreground text-[16px]">Medical Information Protected</p>
+          <p className="font-bold text-foreground text-[16px]">Medical information locked.</p>
           <p className="text-sm text-muted-foreground leading-snug max-w-xs mx-auto">
-            An OTP will be sent to the emergency contact via WhatsApp. Ask them for the code to unlock full medical details.
+            Ask the emergency contact for the WhatsApp OTP to unlock it.
           </p>
         </div>
 

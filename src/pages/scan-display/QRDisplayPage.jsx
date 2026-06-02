@@ -11,6 +11,7 @@ import { getPersonalInfo, getEmergencyContacts, getMedicalItems, getInsurance } 
 import { createAlert } from '@/services/alertService'
 import { SUPPORTED_LANGUAGES } from '@/i18n'
 import { LanguagePicker } from '@/components/ui/LanguagePicker'
+import { useAuth } from '@/hooks/useAuth'
 
 // ─── Phone masking ────────────────────────────────────────────────────────────
 
@@ -941,6 +942,7 @@ function NotActivatedState({ passcode }) {
 export function QRDisplayPage() {
   const { t } = useTranslation()
   const { passcode } = useParams()
+  const { user } = useAuth()
   const [mapCoords, setMapCoords] = useState(null)
   const [locationSource, setLocationSource] = useState(null) // 'gps' | 'ip' | null
   const [activeTab, setActiveTab] = useState('critical')
@@ -1096,10 +1098,12 @@ export function QRDisplayPage() {
     setPrimaryContact(null)
   }
 
+  const isOwner = !!user && !!uid && user.uid === uid
+
   // ── Scan logging ──────────────────────────────────────────────────────────
 
   useEffect(() => {
-    if (!qr || !uid) return
+    if (!qr || !uid || isOwner) return
     recordScan(passcode)
     createAlert(uid, childId, {
       type: 'scan', title: 'QR Code Scanned',
@@ -1127,7 +1131,7 @@ export function QRDisplayPage() {
 
   useEffect(() => {
     if (whatsappSentRef.current) return
-    if (!qr || !uid || loadingContacts || !contacts.length) return
+    if (!qr || !uid || loadingContacts || !contacts.length || isOwner) return
     whatsappSentRef.current = true
     // 5-second delay gives GPS (8s timeout) or IP fallback time to resolve coords
     const timer = setTimeout(() => {
@@ -1144,6 +1148,7 @@ export function QRDisplayPage() {
   if (loadingQR) return <LoadingState />
   if (errorQR || !qr) return <NotFoundState passcode={passcode} />
   if (!qr.isActive || !qr.uid) return <Navigate to={`/?qr=${passcode}`} replace />
+  if (isOwner) return <Navigate to="/" replace />
 
   // ── Derived data ──────────────────────────────────────────────────────────
 

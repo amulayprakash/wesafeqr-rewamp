@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom'
 import { BottomNav } from './BottomNav'
 import { TopNav } from './TopNav'
 import { useNotifications } from '@/hooks/useNotifications'
+import { SOSButton } from '@/components/sos/SOSButton'
 
 function NotificationManager() {
   useNotifications()
@@ -26,6 +27,9 @@ export function AppShell() {
 
       {/* Mobile floating bottom navigation */}
       <BottomNav />
+
+      {/* Floating SOS button — visible on all screens except /settings */}
+      <SOSButton />
     </div>
   )
 }

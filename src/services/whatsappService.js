@@ -80,3 +80,39 @@ export async function sendEmergencyQRAlerts(contacts, profileName, lat, lng) {
   })
   await Promise.allSettled(sends)
 }
+
+export async function sendSOSAlert(contacts, profileName, lat, lng) {
+  if (!contacts?.length) return
+
+  const now = new Date()
+  const time = now.toLocaleString('en-IN', {
+    day: 'numeric', month: 'short', year: 'numeric',
+    hour: 'numeric', minute: '2-digit', hour12: true,
+  })
+
+  const locationBlock =
+    lat != null && lng != null
+      ? `📍 *Current Location*\n` +
+        `View on Google Maps: https://maps.google.com/?q=${lat},${lng}\n` +
+        `Get Directions: https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}\n\n`
+      : `📍 Location data could not be obtained. Please contact them directly.\n\n`
+
+  const message =
+    `🆘 *SOS EMERGENCY — ${profileName} needs immediate help!*\n\n` +
+    `⚠️ *${profileName} has personally triggered an SOS alert via WeSafe.*\n\n` +
+    `${profileName} may be injured, in danger, or unable to call for help. ` +
+    `Please respond immediately.\n\n` +
+    locationBlock +
+    `🕐 SOS triggered at: ${time}\n\n` +
+    `Please try calling ${profileName} right away. If there is no response, ` +
+    `send help to their location or call emergency services (112).\n\n` +
+    `_This alert was manually triggered by ${profileName} using the WeSafe SOS service — not a QR scan._\n` +
+    `_WeSafe — Protecting lives through smart emergency info_`
+
+  const sends = contacts.map(c => {
+    const phone = c.phone || c['Emergency Contact Number']
+    if (!phone) return Promise.resolve()
+    return sendWhatsApp(phone, message).catch(() => {})
+  })
+  await Promise.allSettled(sends)
+}
