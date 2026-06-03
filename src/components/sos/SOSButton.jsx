@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/hooks/useAuth'
@@ -30,6 +30,14 @@ function fmt(s) {
   return `0:${String(s).padStart(2, '0')}`
 }
 
+function getSosTimer() {
+  return parseInt(localStorage.getItem('wesafe-sos-timer') || '15', 10)
+}
+
+function isScanPopupEnabled() {
+  return localStorage.getItem('wesafe-sos-scan-popup') !== 'false'
+}
+
 export function SOSButton() {
   const location = useLocation()
   const { user } = useAuth()
@@ -37,10 +45,25 @@ export function SOSButton() {
 
   // phases: 'idle' | 'countdown' | 'sending' | 'sent' | 'error'
   const [phase, setPhase] = useState('idle')
-  const [timeLeft, setTimeLeft] = useState(15)
+  const [timeLeft, setTimeLeft] = useState(() => getSosTimer())
   const [showDialog, setShowDialog] = useState(false)
+  const [showScanPrompt, setShowScanPrompt] = useState(false)
+  const shownForKey = useRef(null)
 
   const isCountingDown = phase === 'countdown'
+
+  // ── Detect scan-redirect and show immediate SOS prompt ────────────────────
+  useEffect(() => {
+    if (
+      location.state?.fromScan &&
+      isScanPopupEnabled() &&
+      user &&
+      shownForKey.current !== location.key
+    ) {
+      shownForKey.current = location.key
+      setShowScanPrompt(true)
+    }
+  }, [location, user])
 
   // ── Countdown ticker ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -53,6 +76,7 @@ export function SOSButton() {
 
   // ── Send when timer hits zero ─────────────────────────────────────────────
   const handleSOS = useCallback(async () => {
+    setShowScanPrompt(false)
     setPhase('sending')
     setShowDialog(true)
     try {
@@ -64,7 +88,7 @@ export function SOSButton() {
 
       if (!contacts?.length) {
         setPhase('error')
-        setTimeout(() => { setPhase('idle'); setTimeLeft(15) }, 2500)
+        setTimeout(() => { setPhase('idle'); setTimeLeft(getSosTimer()) }, 2500)
         return
       }
 
@@ -78,10 +102,10 @@ export function SOSButton() {
       }).catch(() => {})
 
       setPhase('sent')
-      setTimeout(() => { setPhase('idle'); setTimeLeft(15); setShowDialog(false) }, 3000)
+      setTimeout(() => { setPhase('idle'); setTimeLeft(getSosTimer()); setShowDialog(false) }, 3000)
     } catch {
       setPhase('error')
-      setTimeout(() => { setPhase('idle'); setTimeLeft(15) }, 2500)
+      setTimeout(() => { setPhase('idle'); setTimeLeft(getSosTimer()) }, 2500)
     }
   }, [user, activeProfileId, activeProfile])
 
@@ -91,15 +115,20 @@ export function SOSButton() {
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleTrigger = () => {
+    const timer = getSosTimer()
     setPhase('countdown')
-    setTimeLeft(15)
+    setTimeLeft(timer)
     setShowDialog(true)
   }
 
   const handleCancel = () => {
     setPhase('idle')
-    setTimeLeft(15)
+    setTimeLeft(getSosTimer())
     setShowDialog(false)
+  }
+
+  const handleDismissScanPrompt = () => {
+    setShowScanPrompt(false)
   }
 
   // ── Guards ────────────────────────────────────────────────────────────────
@@ -158,12 +187,10 @@ export function SOSButton() {
             ].join(' ')}
           >
             {showCancelBadge ? (
-              /* X icon when in cancel mode */
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-5 h-5">
                 <path d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 0 0 5.7 7.11L10.59 12 5.7 16.89a1 1 0 1 0 1.41 1.41L12 13.41l4.89 4.89a1 1 0 0 0 1.41-1.41L13.41 12l4.89-4.89a1 1 0 0 0 0-1.4z"/>
               </svg>
             ) : (
-              /* Bell SVG for SOS */
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-5 h-5">
                 <path d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2zm6-6V11a6 6 0 0 0-5-5.91V4a1 1 0 0 0-2 0v1.09A6 6 0 0 0 6 11v5l-2 2v1h16v-1l-2-2z"/>
               </svg>
@@ -175,7 +202,75 @@ export function SOSButton() {
         </button>
       </div>
 
-      {/* ── Dialog ───────────────────────────────────────────────────────── */}
+      {/* ── Scan-redirect SOS Prompt ─────────────────────────────────────── */}
+      <AnimatePresence>
+        {showScanPrompt && (
+          <>
+            <motion.div
+              key="scan-prompt-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
+              onClick={handleDismissScanPrompt}
+            />
+            <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-6 lg:items-center lg:px-0 lg:pb-0 pointer-events-none">
+              <motion.div
+                key="scan-prompt-dialog"
+                initial={{ opacity: 0, scale: 0.88, y: 24 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.88, y: 24 }}
+                transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+                className="w-full max-w-[22rem] rounded-[20px] bg-card border border-border shadow-2xl overflow-hidden pointer-events-auto"
+              >
+                {/* Red header */}
+                <div className="bg-red-600 px-6 py-5 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-5 h-5">
+                      <path d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2zm6-6V11a6 6 0 0 0-5-5.91V4a1 1 0 0 0-2 0v1.09A6 6 0 0 0 6 11v5l-2 2v1h16v-1l-2-2z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-white font-black text-base tracking-wide leading-none">
+                      EMERGENCY ALERT
+                    </p>
+                    <p className="text-red-100 text-xs mt-0.5">Scan detected</p>
+                  </div>
+                </div>
+
+                {/* Body */}
+                <div className="px-6 py-5">
+                  <p className="text-sm font-medium text-foreground leading-snug">
+                    You just scanned a WeSafe QR code. If this person needs immediate help, send an SOS to your emergency contacts now.
+                  </p>
+
+                  <div className="mt-5 flex flex-col gap-2.5">
+                    <button
+                      onClick={handleSOS}
+                      className="w-full py-3.5 rounded-xl bg-red-600 text-white font-black text-sm tracking-wide shadow-md active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-4 h-4">
+                        <path d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2zm6-6V11a6 6 0 0 0-5-5.91V4a1 1 0 0 0-2 0v1.09A6 6 0 0 0 6 11v5l-2 2v1h16v-1l-2-2z"/>
+                      </svg>
+                      SEND SOS NOW
+                    </button>
+
+                    <button
+                      onClick={handleDismissScanPrompt}
+                      className="w-full py-2.5 text-sm font-medium text-muted-foreground active:opacity-70 transition-opacity"
+                    >
+                      Not now
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ── Main SOS Dialog ───────────────────────────────────────────────── */}
       <AnimatePresence>
         {showDialog && (
           <>

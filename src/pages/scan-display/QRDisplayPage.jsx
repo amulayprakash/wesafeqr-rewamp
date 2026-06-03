@@ -1148,7 +1148,7 @@ export function QRDisplayPage() {
   if (loadingQR) return <LoadingState />
   if (errorQR || !qr) return <NotFoundState passcode={passcode} />
   if (!qr.isActive || !qr.uid) return <Navigate to={`/?qr=${passcode}`} replace />
-  if (isOwner) return <Navigate to="/" replace />
+  if (isOwner) return <Navigate to="/" replace state={{ fromScan: true }} />
 
   // ── Derived data ──────────────────────────────────────────────────────────
 

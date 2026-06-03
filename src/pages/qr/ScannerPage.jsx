@@ -34,7 +34,6 @@ export function ScannerPage() {
           scanner.clear()
           if (decodedText.includes('wesafeqr.com/qr/')) {
             const passcode = decodedText.split('/qr/')[1]
-            // Record the scan event before navigating
             recordScan(passcode)
             navigate(`/qr/${passcode}`)
           } else {

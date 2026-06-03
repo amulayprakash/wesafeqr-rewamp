@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -51,6 +52,26 @@ export function SettingsPage() {
   const { isDark, toggleTheme } = useTheme()
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
+
+  const [sosScanPopup, setSosScanPopup] = useState(
+    () => localStorage.getItem('wesafe-sos-scan-popup') !== 'false'
+  )
+  const [sosTimer, setSosTimer] = useState(
+    () => parseInt(localStorage.getItem('wesafe-sos-timer') || '15', 10)
+  )
+
+  const handleSosScanPopupToggle = (val) => {
+    setSosScanPopup(val)
+    localStorage.setItem('wesafe-sos-scan-popup', val ? 'true' : 'false')
+  }
+
+  const handleSosTimerChange = (delta) => {
+    setSosTimer(prev => {
+      const next = Math.min(60, Math.max(5, prev + delta))
+      localStorage.setItem('wesafe-sos-timer', String(next))
+      return next
+    })
+  }
 
   const displayName = user?.displayName || 'User'
   const initials = displayName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
@@ -109,14 +130,160 @@ export function SettingsPage() {
           </div>
         </motion.div>
 
-        {/* Settings sections */}
-        {SETTING_SECTIONS.map((section, sectionIndex) => (
+        {/* Settings sections — first 3 (Profile, App, Safety) */}
+        {SETTING_SECTIONS.slice(0, 3).map((section, sectionIndex) => (
           <motion.div
             key={section.titleKey}
             variants={sectionAnim}
             initial="hidden"
             animate="show"
             transition={{ delay: sectionIndex * 0.07, duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
+          >
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2 px-1">
+              {t(section.titleKey)}
+            </p>
+            <div
+              className="bg-card rounded-2xl border border-border/60 overflow-hidden"
+              style={{ boxShadow: '0 1px 3px hsl(var(--foreground)/0.04)' }}
+            >
+              {section.items.map((item, itemIndex) => (
+                <div key={itemIndex} className={itemIndex < section.items.length - 1 ? 'border-b border-border/50' : ''}>
+                  {item.isToggle ? (
+                    <div className="flex items-center justify-between px-4 py-3.5">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${item.iconBg}`}>
+                          <span className={`material-symbols-outlined ${item.iconColor}`} style={{ fontSize: '18px' }}>{item.icon}</span>
+                        </div>
+                        <span className="font-medium text-sm">{t(item.labelKey)}</span>
+                      </div>
+                      <Switch checked={isDark} onCheckedChange={toggleTheme} />
+                    </div>
+                  ) : item.comingSoon ? (
+                    <button
+                      onClick={() => handleComingSoon(item.labelKey)}
+                      className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-accent/50 active:bg-accent transition-colors text-left"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${item.iconBg}`}>
+                          <span className={`material-symbols-outlined ${item.iconColor}`} style={{ fontSize: '18px' }}>{item.icon}</span>
+                        </div>
+                        <span className="font-medium text-sm">{t(item.labelKey)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full font-semibold">{t('settings.soon_badge')}</span>
+                        <span className="material-symbols-outlined text-muted-foreground/50" style={{ fontSize: '18px' }}>chevron_right</span>
+                      </div>
+                    </button>
+                  ) : item.href ? (
+                    <a
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between px-4 py-3.5 hover:bg-accent/50 active:bg-accent transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${item.iconBg}`}>
+                          <span className={`material-symbols-outlined ${item.iconColor}`} style={{ fontSize: '18px' }}>{item.icon}</span>
+                        </div>
+                        <span className="font-medium text-sm">{t(item.labelKey)}</span>
+                      </div>
+                      <span className="material-symbols-outlined text-muted-foreground/50" style={{ fontSize: '18px' }}>open_in_new</span>
+                    </a>
+                  ) : (
+                    <Link
+                      to={item.link}
+                      className="flex items-center justify-between px-4 py-3.5 hover:bg-accent/50 active:bg-accent transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${item.iconBg}`}>
+                          <span className={`material-symbols-outlined ${item.iconColor}`} style={{ fontSize: '18px' }}>{item.icon}</span>
+                        </div>
+                        <span className="font-medium text-sm">{t(item.labelKey)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {item.isLanguage && (
+                          <span className="text-sm text-muted-foreground font-medium">{currentLang?.nativeLabel ?? 'English'}</span>
+                        )}
+                        <span className="material-symbols-outlined text-muted-foreground/50" style={{ fontSize: '18px' }}>chevron_right</span>
+                      </div>
+                    </Link>
+                  )}
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        ))}
+
+        {/* ── SOS Settings section ─────────────────────────────────────────── */}
+        <motion.div
+          variants={sectionAnim}
+          initial="hidden"
+          animate="show"
+          transition={{ delay: 3 * 0.07, duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
+        >
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2 px-1">
+            SOS Settings
+          </p>
+          <div
+            className="bg-card rounded-2xl border border-border/60 overflow-hidden"
+            style={{ boxShadow: '0 1px 3px hsl(var(--foreground)/0.04)' }}
+          >
+            {/* Scan SOS Prompt toggle */}
+            <div className="border-b border-border/50">
+              <div className="flex items-center justify-between px-4 py-3.5">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-rose-100 dark:bg-rose-900/30">
+                    <span className="material-symbols-outlined text-rose-600 dark:text-rose-400" style={{ fontSize: '18px' }}>qr_code_scanner</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">Scan SOS Prompt</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Show an SOS option when you scan a WeSafe QR code</p>
+                  </div>
+                </div>
+                <Switch checked={sosScanPopup} onCheckedChange={handleSosScanPopupToggle} />
+              </div>
+            </div>
+
+            {/* Auto-send countdown stepper */}
+            <div className="flex items-center justify-between px-4 py-3.5">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-amber-100 dark:bg-amber-900/30">
+                  <span className="material-symbols-outlined text-amber-600 dark:text-amber-400" style={{ fontSize: '18px' }}>timer</span>
+                </div>
+                <div>
+                  <p className="font-medium text-sm">Auto-send countdown</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Seconds before SOS sends automatically</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleSosTimerChange(-5)}
+                  disabled={sosTimer <= 5}
+                  className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-foreground font-bold text-base disabled:opacity-30 active:scale-95 transition-transform"
+                >
+                  −
+                </button>
+                <span className="w-8 text-center text-sm font-black tabular-nums">{sosTimer}s</span>
+                <button
+                  onClick={() => handleSosTimerChange(5)}
+                  disabled={sosTimer >= 60}
+                  className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-foreground font-bold text-base disabled:opacity-30 active:scale-95 transition-transform"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Last section (Support & Legal) */}
+        {SETTING_SECTIONS.slice(3).map((section, i) => (
+          <motion.div
+            key={section.titleKey}
+            variants={sectionAnim}
+            initial="hidden"
+            animate="show"
+            transition={{ delay: (3 + 1 + i) * 0.07, duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
           >
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2 px-1">
               {t(section.titleKey)}
