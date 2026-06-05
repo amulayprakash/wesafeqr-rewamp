@@ -18,9 +18,8 @@ function buildMessage(profileName, lat, lng) {
     return (
       `🚨 *ALERT — ${profileName}'s WeSafe Safety QR Scanned*\n\n` +
       `${profileName}'s WeSafe safety QR code has just been scanned by someone nearby.\n\n` +
-      `📍 *Location & Directions*\n` +
-      `View on Google Maps: https://maps.google.com/?q=${lat},${lng}\n` +
-      `Get Directions: https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}\n\n` +
+      `📍 *Location*\n` +
+      `View on Google Maps: https://maps.google.com/?q=${lat},${lng}\n\n` +
       `🕐 Scanned at: ${time}\n\n` +
       `_This is an automated safety alert from WeSafe._`
     )
@@ -60,8 +59,50 @@ export async function sendOTPToAllContacts(contacts, otp, profileName) {
       `🔑 *Your OTP Code:*\n\n` +
       `*${otpSpaced}*\n` +
       `━━━━━━━━━━━━━━━━\n\n` +
-      `Share this 6-digit code *only* with the person you trust who has scanned the QR.\n\n` +
-      `⏱ Valid for *10 minutes* • One-time use only\n\n` +
+      `Share this 4-digit code *only* with the person you trust who has scanned the QR.\n\n` +
+      `⏱ Valid for *30 minutes* • One-time use only\n\n` +
+      `_WeSafe — Protecting lives through smart emergency info_`
+
+    return sendWhatsApp(phone, message).catch(() => {})
+  })
+
+  await Promise.allSettled(sends)
+}
+
+export async function sendCombinedAlert(contacts, profileName, lat, lng, otp) {
+  if (!contacts?.length) return
+
+  const now = new Date()
+  const time = now.toLocaleString('en-IN', {
+    day: 'numeric', month: 'short', year: 'numeric',
+    hour: 'numeric', minute: '2-digit', hour12: true,
+  })
+
+  const otpSpaced = String(otp).split('').join(' ')
+
+  const locationBlock =
+    lat != null && lng != null
+      ? `📍 *Scanner's Location*\n` +
+        `View on Google Maps: https://maps.google.com/?q=${lat},${lng}\n\n`
+      : `📍 Location data could not be obtained.\n\n`
+
+  const sends = contacts.map(c => {
+    const phone = c.phone || c['Emergency Contact Number']
+    const name = c.name || c['Emergency Contact Name'] || 'there'
+    if (!phone) return Promise.resolve()
+
+    const message =
+      `🚨 *ALERT — ${profileName}'s WeSafe Safety QR Scanned*\n\n` +
+      `${profileName}'s safety QR has been scanned. The scanner's location and a medical access code are below.\n\n` +
+      `Hello ${name},\n\n` +
+      locationBlock +
+      `🔐 *Medical Access OTP*\n` +
+      `Share this code *only* with the person who scanned the QR if you trust them.\n\n` +
+      `━━━━━━━━━━━━━━━━\n` +
+      `🔑 *Code:* *${otpSpaced}*\n` +
+      `━━━━━━━━━━━━━━━━\n\n` +
+      `⏱ Valid for *30 minutes* • One-time use only\n\n` +
+      `🕐 Scanned at: ${time}\n\n` +
       `_WeSafe — Protecting lives through smart emergency info_`
 
     return sendWhatsApp(phone, message).catch(() => {})

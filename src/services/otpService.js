@@ -27,6 +27,29 @@ function generateUUID() {
   })
 }
 
+export async function createOTPRecord({ passcode, uid, childId }) {
+  const otp = generateOTP()
+  const hashedOTP = await hashOTP(otp)
+  const requestId = generateUUID()
+
+  try {
+    await setDoc(doc(db, 'otpRequests', requestId), {
+      hashedOTP,
+      passcode,
+      uid,
+      childId,
+      expiresAt: Timestamp.fromMillis(Date.now() + 30 * 60 * 1000),
+      used: false,
+      createdAt: serverTimestamp(),
+    })
+  } catch (err) {
+    console.error('[OTP] Firestore write failed:', err)
+    throw new Error('firestore_denied')
+  }
+
+  return { requestId, otp }
+}
+
 export async function createAndSendOTP({ passcode, uid, childId, contacts, profileName }) {
   const otp = generateOTP()
   const hashedOTP = await hashOTP(otp)
@@ -38,7 +61,7 @@ export async function createAndSendOTP({ passcode, uid, childId, contacts, profi
       passcode,
       uid,
       childId,
-      expiresAt: Timestamp.fromMillis(Date.now() + 10 * 60 * 1000),
+      expiresAt: Timestamp.fromMillis(Date.now() + 30 * 60 * 1000),
       used: false,
       createdAt: serverTimestamp(),
     })

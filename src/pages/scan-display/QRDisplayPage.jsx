@@ -4,8 +4,8 @@ import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { getQRCode, recordScan, logScanToQRCodeScans } from '@/services/qrService'
-import { sendEmergencyQRAlerts } from '@/services/whatsappService'
-import { createAndSendOTP, verifyOTPCode } from '@/services/otpService'
+import { sendCombinedAlert } from '@/services/whatsappService'
+import { createOTPRecord, verifyOTPCode } from '@/services/otpService'
 import OTPUnlockSection from '@/components/scan/OTPUnlockSection'
 import { getPersonalInfo, getEmergencyContacts, getMedicalItems, getInsurance } from '@/services/profileService'
 import { createAlert } from '@/services/alertService'
@@ -953,6 +953,8 @@ export function QRDisplayPage() {
   const [primaryContact, setPrimaryContact] = useState(null)
   const scanMetaRef = useRef({ latitude: null, longitude: null, ipAddress: '', permissionGiven: false })
   const whatsappSentRef = useRef(false)
+  const otpAutoSentRef = useRef(false)
+  const otpCodeRef = useRef(null)
 
   // ── Location: GPS first, IP fallback ─────────────────────────────────────
 
@@ -1049,33 +1051,45 @@ export function QRDisplayPage() {
 
   // ── OTP unlock handlers ───────────────────────────────────────────────────
 
-  async function handleRequestOTP() {
+  async function handleAutoOTP() {
     if (!contacts?.length) { setOtpState('error'); setOtpError('no_contact'); return }
     const primary = contacts[0]
     const primaryPhone = primary?.phone || primary?.['Emergency Contact Number']
     if (!primaryPhone) { setOtpState('error'); setOtpError('no_contact'); return }
 
     setOtpState('sending')
-    // Set primary contact for the call/WhatsApp buttons on the unlock screen
     setPrimaryContact({
       name: primary.name || primary['Emergency Contact Name'] || '',
       maskedPhone: maskPhone(primaryPhone),
       rawPhone: primaryPhone,
     })
 
+    let rid, otp
     try {
-      const { requestId: rid, waSent } = await createAndSendOTP({
-        passcode, uid, childId,
-        contacts,
-        profileName: personalInfo?.name || qr?.name || 'the profile holder',
-      })
+      const result = await createOTPRecord({ passcode, uid, childId })
+      rid = result.requestId
+      otp = result.otp
+      otpCodeRef.current = otp
       setRequestId(rid)
-      setOtpState(waSent ? 'sent' : 'sent_wa_failed')
     } catch (err) {
-      console.error('[OTP] createAndSendOTP error:', err)
+      console.error('[OTP] createOTPRecord error:', err)
       setOtpState('error')
       setOtpError(err.message === 'firestore_denied' ? 'firestore_denied' : 'send_failed')
+      return
     }
+
+    // Wait for location to settle (GPS has 8s timeout; 5s covers most cases)
+    await new Promise(resolve => setTimeout(resolve, 5000))
+
+    const profileName = personalInfo?.name || qr?.name || 'Unknown'
+    const lat = scanMetaRef.current.latitude
+    const lng = scanMetaRef.current.longitude
+
+    const waSent = await sendCombinedAlert(contacts, profileName, lat, lng, otp)
+      .then(() => true)
+      .catch(() => false)
+
+    setOtpState(waSent ? 'sent' : 'sent_wa_failed')
   }
 
   async function handleVerifyOTP(digits) {
@@ -1092,10 +1106,12 @@ export function QRDisplayPage() {
   }
 
   function handleRetryOTP() {
-    setOtpState('idle')
     setOtpError('')
     setRequestId(null)
     setPrimaryContact(null)
+    otpAutoSentRef.current = false
+    otpCodeRef.current = null
+    handleAutoOTP()
   }
 
   const isOwner = !!user && !!uid && user.uid === uid
@@ -1127,25 +1143,18 @@ export function QRDisplayPage() {
     return () => clearTimeout(timer)
   }, [qr, uid, passcode, personalInfo])
 
-  // ── WhatsApp emergency alerts ─────────────────────────────────────────────
+  // ── Auto-send combined alert + OTP when non-owner scans ──────────────────
 
   useEffect(() => {
-    if (whatsappSentRef.current) return
+    if (otpAutoSentRef.current) return
     if (!qr || !uid || loadingContacts || !contacts.length || isOwner) return
-    whatsappSentRef.current = true
-    // 5-second delay gives GPS (8s timeout) or IP fallback time to resolve coords
-    const timer = setTimeout(() => {
-      const profileName = personalInfo?.name || qr.name || 'Unknown'
-      const lat = scanMetaRef.current.latitude
-      const lng = scanMetaRef.current.longitude
-      sendEmergencyQRAlerts(contacts, profileName, lat, lng).catch(() => {})
-    }, 5000)
-    return () => clearTimeout(timer)
-  }, [qr, uid, contacts, loadingContacts])
+    otpAutoSentRef.current = true
+    handleAutoOTP()
+  }, [qr, uid, contacts, loadingContacts, isOwner])
 
   // ── Guard states ──────────────────────────────────────────────────────────
 
-  if (loadingQR) return <LoadingState />
+  if (loadingQR || (enabled && (loadingInfo || loadingContacts))) return <LoadingState />
   if (errorQR || !qr) return <NotFoundState passcode={passcode} />
   if (!qr.isActive || !qr.uid) return <Navigate to={`/?qr=${passcode}`} replace />
   if (isOwner) return <Navigate to="/" replace state={{ fromScan: true }} />
@@ -1398,7 +1407,7 @@ export function QRDisplayPage() {
               otpError={otpError}
               primaryContact={primaryContact}
               contacts={contacts}
-              onRequestOTP={handleRequestOTP}
+              onRequestOTP={handleAutoOTP}
               onVerifyOTP={handleVerifyOTP}
               onRetry={handleRetryOTP}
             />

@@ -39,7 +39,7 @@ export default function OTPUnlockSection({
   // Countdown when OTP is sent
   useEffect(() => {
     if (otpState !== 'sent' && otpState !== 'sent_wa_failed') return
-    setSecondsLeft(600)
+    setSecondsLeft(1800)
     const id = setInterval(() => {
       setSecondsLeft(s => {
         if (s <= 1) {
@@ -163,6 +163,48 @@ export default function OTPUnlockSection({
     )
   }
 
+  // ─── Sending state — OTP being generated and alert being sent ────────────
+
+  if (otpState === 'sending') {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-card rounded-xl border border-border card-shadow overflow-hidden"
+      >
+        <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/60 bg-primary/5">
+          <Spinner />
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Alerting Emergency Contact…
+          </span>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div className="text-center space-y-1">
+            <p className="font-semibold text-foreground text-[15px]">Setting up secure access</p>
+            <p className="text-sm text-muted-foreground leading-snug max-w-xs mx-auto">
+              Your emergency contact is being notified with your location and a one-time access code.
+            </p>
+          </div>
+
+          {/* Disabled OTP boxes shown immediately */}
+          <div className="flex items-center justify-center gap-2">
+            {[0, 1, 2, 3].map(i => (
+              <div
+                key={i}
+                className="w-11 h-14 text-center rounded-xl border-2 border-border bg-muted/50 opacity-50"
+              />
+            ))}
+          </div>
+
+          <p className="text-[12px] text-muted-foreground text-center leading-snug">
+            Once notified, ask your emergency contact for the <span className="font-semibold text-foreground">4-digit code</span> and enter it above to view medical records.
+          </p>
+        </div>
+      </motion.div>
+    )
+  }
+
   // ─── Sent state — show contact buttons + OTP input ────────────────────────
 
   if (otpState === 'sent' || otpState === 'sent_wa_failed' || otpState === 'verifying') {
@@ -246,7 +288,7 @@ export default function OTPUnlockSection({
 
           {/* Instruction */}
           <p className="text-[13px] text-muted-foreground text-center leading-snug">
-            Ask them for the <span className="font-semibold text-foreground">4-digit OTP</span> and enter it below
+            Ask them for the <span className="font-semibold text-foreground">4-digit code</span> they received on WhatsApp and enter it below to view medical records
           </p>
 
           {/* OTP boxes */}
@@ -301,9 +343,7 @@ export default function OTPUnlockSection({
     )
   }
 
-  // ─── Idle / Sending — default lock card ──────────────────────────────────
-
-  const isSending = otpState === 'sending'
+  // ─── Idle — fallback (should rarely appear; auto-send starts on load) ─────
 
   return (
     <motion.div
@@ -317,35 +357,30 @@ export default function OTPUnlockSection({
       </div>
 
       <div className="p-5 flex flex-col items-center text-center space-y-4">
-        {/* Lock icon */}
         <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
           <span className="material-symbols-outlined filled text-primary text-[28px]">lock</span>
         </div>
 
         <div className="space-y-1.5">
-          <p className="font-bold text-foreground text-[16px]">Medical information locked.</p>
+          <p className="font-bold text-foreground text-[16px]">Medical information is locked</p>
           <p className="text-sm text-muted-foreground leading-snug max-w-xs mx-auto">
-            Ask the emergency contact for the WhatsApp OTP to unlock it.
+            Contact the emergency contact on this profile — they will receive a 4-digit code via WhatsApp. Enter it below to view medical records.
           </p>
         </div>
 
-        <button
-          disabled={isSending}
-          onClick={onRequestOTP}
-          className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-semibold text-[14px] flex items-center justify-center gap-2 press-scale transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
-        >
-          {isSending ? (
-            <>
-              <Spinner />
-              Sending OTP…
-            </>
-          ) : (
-            <>
-              <span className="material-symbols-outlined filled text-[18px]">lock_open</span>
-              Unlock Medical Information
-            </>
-          )}
-        </button>
+        {/* OTP boxes — always visible */}
+        <div className="flex items-center justify-center gap-2">
+          {[0, 1, 2, 3].map(i => (
+            <div
+              key={i}
+              className="w-11 h-14 rounded-xl border-2 border-border bg-muted/40 opacity-50"
+            />
+          ))}
+        </div>
+
+        <p className="text-[11px] text-muted-foreground">
+          The code is valid for <span className="font-semibold text-foreground">30 minutes</span>
+        </p>
       </div>
     </motion.div>
   )
