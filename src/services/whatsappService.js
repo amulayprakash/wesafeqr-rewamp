@@ -55,10 +55,10 @@ export async function sendOTPToAllContacts(contacts, otp, profileName) {
       `🔐 *Medical Access OTP — WeSafe*\n\n` +
       `Hello ${name},\n\n` +
       `Someone is requesting access to *${profileName}*'s medical information.\n\n` +
-      `━━━━━━━━━━━━━━━━\n` +
+      `━━━━━━━━━━\n` +
       `🔑 *Your OTP Code:*\n\n` +
       `*${otpSpaced}*\n` +
-      `━━━━━━━━━━━━━━━━\n\n` +
+      `━━━━━━━━━━\n\n` +
       `Share this 4-digit code *only* with the person you trust who has scanned the QR.\n\n` +
       `⏱ Valid for *30 minutes* • One-time use only\n\n` +
       `_WeSafe — Protecting lives through smart emergency info_`
@@ -98,9 +98,9 @@ export async function sendCombinedAlert(contacts, profileName, lat, lng, otp) {
       locationBlock +
       `🔐 *Medical Access OTP*\n` +
       `Share this code *only* with the person who scanned the QR if you trust them.\n\n` +
-      `━━━━━━━━━━━━━━━━\n` +
+      `━━━━━━━━━━\n` +
       `🔑 *Code:* *${otpSpaced}*\n` +
-      `━━━━━━━━━━━━━━━━\n\n` +
+      `━━━━━━━━━━\n\n` +
       `⏱ Valid for *30 minutes* • One-time use only\n\n` +
       `🕐 Scanned at: ${time}\n\n` +
       `_WeSafe — Protecting lives through smart emergency info_`
